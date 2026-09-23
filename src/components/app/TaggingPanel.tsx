@@ -1,13 +1,9 @@
+import { SegmentedControl } from "../ui/SegmentedControl";
+import { eventAppearance } from "./eventAppearance";
 import {
   ArrowLeftRight,
-  CornerDownLeft,
-  Crosshair,
-  Footprints,
-  Hand,
   Shield,
-  Target,
   Undo2,
-  Zap,
   CircleDot,
   RectangleVertical,
 } from "lucide-react";
@@ -29,26 +25,23 @@ export function TaggingPanel({
   const store = useMatchStore();
   const { match } = store;
   const { t } = useTranslation();
-  const attacker = teamOf(match, match.currentAttackingTeamId);
   const defender = teamOf(match, otherTeam(match.currentAttackingTeamId));
   const actions = [
-    { type: "GOAL", icon: Target, className: "goal", help: "goalHelp" },
-    { type: "GK_SAVE", icon: Hand, className: "save", help: "flipHelp" },
-    { type: "SHOT_OUT", icon: Crosshair, className: "out", help: "flipHelp" },
-    { type: "STEAL", icon: Zap, className: "steal", help: "flipHelp" },
-    {
-      type: "TECHNICAL_FAULT",
-      icon: Footprints,
-      className: "fault",
-      help: "faultHelp",
-    },
-    {
-      type: "REBOUND_REGAINED",
-      icon: CornerDownLeft,
-      className: "rebound",
-      help: "retainHelp",
-    },
-  ] as const;
+    { type: "GOAL", help: "goalHelp" },
+    { type: "GK_SAVE", help: "flipHelp" },
+    { type: "SHOT_OUT", help: "flipHelp" },
+    { type: "STEAL", help: "flipHelp" },
+    { type: "TECHNICAL_FAULT", help: "faultHelp" },
+    { type: "REBOUND_REGAINED", help: "retainHelp" },
+  ].map((action) => ({
+    ...action,
+    ...eventAppearance[action.type as EventType],
+  })) as {
+    type: EventType;
+    help: "goalHelp" | "flipHelp" | "faultHelp" | "retainHelp";
+    icon: typeof Shield;
+    className: string;
+  }[];
   return (
     <section className="tagging-panel" aria-label={t("tagEvent")}>
       <div className="phase-panel">
@@ -56,39 +49,13 @@ export function TaggingPanel({
           <span>{t("attackPhase")}</span>
           <small>{t("phaseHelp")}</small>
         </div>
-        <div
-          className="segmented phase"
-          role="group"
-          aria-label={t("attackPhase")}
-        >
-          {attackPhases.map((phase) => (
-            <button
-              key={phase}
-              aria-pressed={match.attackPhase === phase}
-              onClick={() => store.setPhase(phase)}
-            >
-              {t(phase)}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="attacking-banner" aria-live="polite">
-        <div className="attack-team">
-          <span className="team-dot" style={{ background: attacker.color }} />
-          <strong>{attacker.name}</strong>
-          <span>{t("attacking")}</span>
-        </div>
-        <ArrowLeftRight size={17} />
-        <div className="defend-team">
-          <span>{defender.name}</span>
-          <b>
-            {defender.currentDefense === "MAN_TO_MAN" ||
-            defender.currentDefense === "OTHER"
-              ? t(defender.currentDefense)
-              : defender.currentDefense}
-          </b>
-          <small>{t("defense")}</small>
-        </div>
+        <SegmentedControl
+          className="phase"
+          label={t("attackPhase")}
+          value={match.attackPhase}
+          options={attackPhases.map((value) => ({ value, label: t(value) }))}
+          onChange={store.setPhase}
+        />
       </div>
       <div className="tag-heading">
         <div>
@@ -155,23 +122,19 @@ export function TaggingPanel({
           </span>
           <small>{t("defenseHelp")}</small>
         </div>
-        <div
-          className="segmented defense"
-          role="group"
-          aria-label={t("defenseSystem")}
-        >
-          {defenseSystems.map((system) => (
-            <button
-              key={system}
-              aria-pressed={defender.currentDefense === system}
-              onClick={() => store.setDefense(system)}
-            >
-              {system === "MAN_TO_MAN" || system === "OTHER"
-                ? t(system === "OTHER" ? "defenseOther" : system)
-                : system}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl
+          className="defense"
+          label={t("defenseSystem")}
+          value={defender.currentDefense}
+          options={defenseSystems.map((value) => ({
+            value,
+            label:
+              value === "MAN_TO_MAN" || value === "OTHER"
+                ? t(value === "OTHER" ? "defenseOther" : value)
+                : value,
+          }))}
+          onChange={store.setDefense}
+        />
       </div>
       <div className="tagging-bottom">
         <span>{t("allLocal")}</span>

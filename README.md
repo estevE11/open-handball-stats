@@ -1,4 +1,4 @@
-# Open Handball Match
+# Open Handball Stats
 
 A lightweight, local-first handball match notebook in the [Open Handball Video](https://github.com/estevE11/open-handball-video) and [Open Handball Board](https://github.com/estevE11/open-handball-tactics) ecosystem. Tag live actions in English or Spanish, keep tactical context, and take your data anywhere.
 
@@ -23,14 +23,16 @@ Browser tests use installed Google Chrome locally. For Chromium, run `npx playwr
 ## Live tagging
 
 - Header language toggle switches all interface terminology instantly and remembers EN/ES on this browser. Team names are user data and are not translated.
-- Start/pause or adjust the cumulative match clock. Its persisted wall-clock anchor avoids drift when the page is throttled or refreshed. The clock continues while the app is closed until you pause it. Moving to the next period pauses the clock without resetting elapsed match time; the clock remains paused after undoing a period change.
+- The scoreboard glows in the current attacking team’s color and follows automatic flips, manual switches, and undo.
+- Start/pause or adjust the cumulative match clock using independent digit inputs with up/down buttons and keyboard arrow support. Its persisted wall-clock anchor avoids drift when the page is throttled or refreshed. The clock continues while the app is closed until you pause it. Moving to the next period pauses the clock without resetting elapsed match time; the clock remains paused after undoing a period change.
 - Select **Static**, **Counterattack**, or **Counterattack attempted** above the action grid. Every possession flip resets this to Static.
 - **Goal**, **Keeper save**, **Off-target / post**, **Steal**, and a chosen **Technical fault** end a possession. Events record the attacking and defending teams and tactics **before** the flip. Goals alone increase the score.
-- **Possession regained**, **7m penalty**, and **Cards & suspensions** retain the current possession and phase. A 7m tag records an award, not a scored goal: log the shot result separately. Sanctions identify the sanctioned team and support two-minute exclusions and yellow/red/blue cards.
+- **Possession regained**, **7m penalty**, and **Cards & suspensions** retain the current possession and phase. A 7m tag records an award, not a scored goal: log the shot result separately. The sanctions team toggle defaults to the defending team each time the dialog opens. Sanctions identify the sanctioned team and support two-minute exclusions and yellow/red/blue cards.
 - **Possession regained** keeps the _currently displayed attacker_. To correct a preceding shot's auto-flip, undo that shot first or use Switch possession; the rebound action never silently reverses the preceding event.
+- Tactical selectors use sliding selection highlights, with reduced-motion preferences respected.
 - Each team's last defense is independent: 6:0, 5:1, 4:2, 3:2:1, 3:3, Individual, or Other / 5+1. Switching possession restores the new defender's saved formation.
 - **Undo** restores the last event, tactical selection, clock adjustment, period change, or note edit. It restores score and possession together without rewinding a running clock for ordinary tags. The last 50 changes are retained in memory; reload and match switching clear undo history.
-- **Switch possession** logs an explicit override. The event stream allows note edits. My matches keeps previous sessions; creating or importing a match never deletes earlier ones. Opening another match pauses the current clock.
+- **Switch possession** logs an explicit override. The event stream includes matching action icons, a pale team-colored edge (the sanctioned team for sanctions, the attacking team for other events), and comment buttons for note edits. My matches keeps previous sessions; creating or importing a match never deletes earlier ones. Opening another match pauses the current clock.
 
 ## Portable data
 

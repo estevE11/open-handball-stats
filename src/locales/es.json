@@ -1,5 +1,5 @@
 {
-  "appName": "Open Handball Match",
+  "appName": "Open Handball Stats",
   "tagline": "Registro en directo. Datos abiertos.",
   "liveWorkspace": "ÁREA DE PARTIDO",
   "localFirst": "Tu partido. Tus datos.",
@@ -110,5 +110,9 @@
   "persistGranted": "Almacenamiento persistente activado. Sigue exportando copias.",
   "persistDenied": "Tu navegador no concedió almacenamiento persistente. Guarda copias JSON.",
   "pwaError": "No se pudo activar el modo sin conexión. Conéctate y recarga para reintentar.",
-  "defenseOther": "Otro / 5+1"
+  "defenseOther": "Otro / 5+1",
+  "digit": "Dígito",
+  "increase": "Subir",
+  "decrease": "Bajar",
+  "digitHelp": "Pulsa las flechas o escribe un dígito. Cada dígito cambia de forma independiente."
 }

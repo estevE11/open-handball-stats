@@ -9,8 +9,8 @@ export default defineConfig({
       registerType: "prompt",
       includeAssets: ["icon.svg", "icon-192.png", "icon-512.png"],
       manifest: {
-        name: "Open Handball Match",
-        short_name: "Handball Match",
+        name: "Open Handball Stats",
+        short_name: "Handball Stats",
         description: "Offline handball match tagging and open tactical data",
         theme_color: "#18181b",
         background_color: "#fafafa",

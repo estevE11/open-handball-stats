@@ -54,11 +54,16 @@ test("tablet tagging preserves team tactics, score, undo, sanctions and reload",
   await page
     .getByRole("button", { name: "Cards & suspensions", exact: true })
     .click();
-  await page.getByLabel("Sanctioned team").selectOption("home");
+  await page
+    .getByRole("group", { name: "Sanctioned team" })
+    .getByRole("button", { name: "Home", exact: true })
+    .click();
   await page
     .getByRole("button", { name: "2-minute suspension", exact: true })
     .click();
-  await expect(page.locator(".attacking-banner")).toContainText("Home");
+  await expect(page.locator(".scoreboard [role=status]")).toHaveText(
+    "Home attacking",
+  );
   await expect(
     page.getByRole("list", { name: "Live event stream" }).getByRole("listitem"),
   ).toHaveCount(5);
@@ -147,8 +152,18 @@ test("language, new match library, notes and clock controls", async ({
   await page
     .getByRole("button", { name: "Ajustar reloj", exact: true })
     .click();
-  await page.getByLabel("Minutos", { exact: true }).fill("29");
-  await page.getByLabel("Segundos", { exact: true }).fill("59");
+  await page
+    .getByRole("textbox", { name: "Minutos · Dígito 1", exact: true })
+    .fill("2");
+  await page
+    .getByRole("textbox", { name: "Minutos · Dígito 2", exact: true })
+    .fill("9");
+  await page
+    .getByRole("textbox", { name: "Segundos · Dígito 1", exact: true })
+    .fill("5");
+  await page
+    .getByRole("textbox", { name: "Segundos · Dígito 2", exact: true })
+    .fill("9");
   await page.getByRole("button", { name: "Aplicar", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "Ajustar reloj", exact: true }),
@@ -256,4 +271,97 @@ test("blank team names cannot create an unrecoverable match", async ({
   await expect(
     page.getByText("Saved on this device", { exact: true }),
   ).toBeVisible();
+});
+
+test("possession glow, sliding tactics, defending-team default and event styling", async ({
+  page,
+}) => {
+  await expect(page).toHaveTitle("Open Handball Stats");
+  const scoreboard = page.locator(".scoreboard");
+  await expect(scoreboard).toHaveCSS("border-top-color", "rgb(86, 132, 163)");
+  const phase = page.getByRole("group", { name: "Attack phase", exact: true });
+  const before = await phase.locator(".segment-selection").boundingBox();
+  await phase
+    .getByRole("button", { name: "Counterattack", exact: true })
+    .click();
+  await expect
+    .poll(
+      async () => (await phase.locator(".segment-selection").boundingBox())!.x,
+    )
+    .toBeGreaterThan(before!.x + 20);
+  await page.getByRole("button", { name: /Goal Add a goal/ }).click();
+  await expect(scoreboard).toHaveCSS("border-top-color", "rgb(200, 146, 71)");
+  const event = page.locator(".event-list li").first();
+  await expect(event.locator(".event-action-icon svg")).toBeVisible();
+  await expect(event.locator(".event-action-icon")).toHaveCSS(
+    "color",
+    "rgb(84, 114, 60)",
+  );
+  await expect(
+    event.locator(".note-button .lucide-message-circle"),
+  ).toBeVisible();
+  expect(
+    await event.evaluate((el) =>
+      getComputedStyle(el).getPropertyValue("--event-team-color").trim(),
+    ),
+  ).toBe("#5684a3");
+  await page
+    .getByRole("button", { name: "Cards & suspensions", exact: true })
+    .click();
+  let teams = page.getByRole("group", { name: "Sanctioned team" });
+  await expect(
+    teams.getByRole("button", { name: "Home", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await teams.getByRole("button", { name: "Away", exact: true }).click();
+  await page.getByRole("button", { name: "Yellow card", exact: true }).click();
+  expect(
+    await event.evaluate((el) =>
+      getComputedStyle(el).getPropertyValue("--event-team-color").trim(),
+    ),
+  ).toBe("#c89247");
+  await page
+    .getByRole("button", { name: "Cards & suspensions", exact: true })
+    .click();
+  teams = page.getByRole("group", { name: "Sanctioned team" });
+  await expect(
+    teams.getByRole("button", { name: "Home", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "Close", exact: true }).click();
+  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  await expect(scoreboard).toHaveCSS("border-top-color", "rgb(86, 132, 163)");
+});
+
+test("per-digit clock editing wraps safely and supports cancel and undo", async ({
+  page,
+}) => {
+  await page.getByRole("button", { name: "Adjust clock", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Increase Minutes · Digit 1", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Decrease Seconds · Digit 1", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Decrease Seconds · Digit 2", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Apply", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Adjust clock", exact: true }),
+  ).toHaveText("10:59");
+  await page.getByRole("button", { name: "Adjust clock", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Increase Seconds · Digit 1", exact: true })
+    .click();
+  await expect(
+    page.getByRole("textbox", { name: "Seconds · Digit 1", exact: true }),
+  ).toHaveValue("0");
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Adjust clock", exact: true }),
+  ).toHaveText("10:59");
+  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Adjust clock", exact: true }),
+  ).toHaveText("00:00");
 });

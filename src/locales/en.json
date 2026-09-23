@@ -1,5 +1,5 @@
 {
-  "appName": "Open Handball Match",
+  "appName": "Open Handball Stats",
   "tagline": "Live tagging. Open data.",
   "liveWorkspace": "MATCH WORKSPACE",
   "localFirst": "Your match. Your data.",
@@ -110,5 +110,9 @@
   "persistGranted": "Persistent storage enabled. Keep exporting backups.",
   "persistDenied": "Your browser did not grant persistent storage. Keep JSON backups.",
   "pwaError": "Offline setup failed. Reconnect and reload to retry.",
-  "defenseOther": "Other / 5+1"
+  "defenseOther": "Other / 5+1",
+  "digit": "Digit",
+  "increase": "Increase",
+  "decrease": "Decrease",
+  "digitHelp": "Tap the arrows or type a digit. Each digit wraps independently."
 }

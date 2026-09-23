@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useRegisterSW } from "virtual:pwa-register/react";
 import {
   ChevronRight,
@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { useTranslation, type TranslationKey } from "./hooks/useTranslation";
 import { useMatchStore, flushSaves } from "./store/matchStore";
-import { formatTime, gameSeconds, score } from "./lib/matchEngine";
+import { formatTime, gameSeconds, score, teamOf } from "./lib/matchEngine";
 import { importJSON } from "./lib/exportService";
 import { TaggingPanel } from "./components/app/TaggingPanel";
 import { EventStream } from "./components/app/EventStream";
@@ -101,7 +101,7 @@ export default function App() {
         <a className="brand" href="/" aria-label={t("appName")}>
           <img src="/icon.svg" alt="" />
           <div>
-            Open Handball <b>Match</b>
+            Open Handball <b>Stats</b>
             <span>{t("tagline")}</span>
           </div>
           <small>v0.1</small>
@@ -238,7 +238,21 @@ export default function App() {
           className="match-workspace"
           disabled={!store.ready || importing}
         >
-          <div className="scoreboard">
+          <div
+            className="scoreboard"
+            style={
+              {
+                "--possession-color": teamOf(
+                  match,
+                  match.currentAttackingTeamId,
+                ).color,
+              } as CSSProperties
+            }
+          >
+            <span className="sr-only" role="status">
+              {teamOf(match, match.currentAttackingTeamId).name}{" "}
+              {t("attacking")}
+            </span>
             <div
               className={`score-team home ${match.currentAttackingTeamId === "home" ? "has-ball" : ""}`}
             >

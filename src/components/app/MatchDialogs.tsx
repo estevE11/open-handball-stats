@@ -1,3 +1,5 @@
+import { SegmentedControl } from "../ui/SegmentedControl";
+import { ClockEditor } from "./ClockEditor";
 import { useEffect, useState, type FormEvent } from "react";
 import {
   Download,
@@ -265,16 +267,17 @@ export function MatchDialogs({
       {kind === "sanction" && (
         <>
           <p className="dialog-description">{t("sanctionHelp")}</p>
-          <label>
-            {t("sanctionTeam")}
-            <select
-              value={team}
-              onChange={(e) => setTeam(e.target.value as TeamId)}
-            >
-              <option value="home">{match.homeTeam.name}</option>
-              <option value="away">{match.awayTeam.name}</option>
-            </select>
-          </label>
+          <div className="sanction-team-label">{t("sanctionTeam")}</div>
+          <SegmentedControl
+            className="sanction-teams"
+            label={t("sanctionTeam")}
+            value={team}
+            options={[
+              { value: "home", label: match.homeTeam.name },
+              { value: "away", label: match.awayTeam.name },
+            ]}
+            onChange={setTeam}
+          />
           <div className="choice-list">
             {sanctions.map((sanction) => (
               <button
@@ -296,45 +299,14 @@ export function MatchDialogs({
         </>
       )}
       {kind === "clock" && (
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            const data = new FormData(e.currentTarget);
-            store.setTime(
-              Number(data.get("minutes")) * 60 + Number(data.get("seconds")),
-            );
+        <ClockEditor
+          seconds={gameSeconds(match)}
+          onApply={(seconds) => {
+            store.setTime(seconds);
             onClose();
           }}
-        >
-          <p className="dialog-description">{t("clockHelp")}</p>
-          <div className="two-cols">
-            <label>
-              {t("minutes")}
-              <input
-                type="number"
-                name="minutes"
-                min={0}
-                max={10079}
-                required
-                defaultValue={Math.floor(gameSeconds(match) / 60)}
-              />
-            </label>
-            <label>
-              {t("seconds")}
-              <input
-                type="number"
-                name="seconds"
-                min={0}
-                max={59}
-                required
-                defaultValue={Math.floor(gameSeconds(match) % 60)}
-              />
-            </label>
-          </div>
-          <div className="dialog-actions">
-            <button className="button primary">{t("apply")}</button>
-          </div>
-        </form>
+          onCancel={onClose}
+        />
       )}
       {kind === "period" && (
         <>
