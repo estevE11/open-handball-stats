@@ -6,6 +6,8 @@ const csvCell = (value: unknown) => {
   if (/^[\s]*[=+@-]/.test(text) || /^[\t\r\n]/.test(text)) text = `'${text}`;
   return `"${text.replaceAll('"', '""')}"`;
 };
+// XML 1.0 forbids these control characters in text nodes.
+// eslint-disable-next-line no-control-regex
 const xml = (value: unknown) => String(value ?? '').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&apos;');
 export function exportCSV(match: MatchSession): string {
   const header = ['id', 'match_id', 'possession_index', 'period', 'game_time_seconds', 'timestamp', 'attacking_team', 'defending_team', 'attack_phase', 'defense_system', 'event_type', 'sub_type', 'is_possession_flipped', 'sanction_team', 'notes'];
