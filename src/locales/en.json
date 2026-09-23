@@ -92,7 +92,7 @@
   "backupNote": "Keep JSON backups. Clearing browser data removes local matches.",
   "importError": "Invalid match file. Check the JSON format and match data (maximum 20 MB).",
   "loadError": "Could not open the match. Your current match is still here.",
-  "nameError": "Use two different team names.",
+  "nameError": "Enter two different, non-empty team names.",
   "libraryHelp": "Matches saved in this browser. Opening another match pauses this clock.",
   "newHelp": "Your current match stays in My matches.",
   "sanctionHelp": "Log a sanction without changing possession.",

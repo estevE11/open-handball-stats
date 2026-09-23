@@ -82,7 +82,7 @@ export function MatchDialogs({
     const values = new FormData(event.currentTarget);
     const home = String(values.get("home")).trim();
     const away = String(values.get("away")).trim();
-    if (home === away) {
+    if (!home || !away || home === away) {
       setError("nameError");
       return;
     }

@@ -113,13 +113,11 @@ test("JSON import/export, invalid import isolation, CSV and XML downloads", asyn
   await page.getByRole("button", { name: "My matches", exact: true }).click();
   await expect(page.locator(".match-row")).toHaveCount(2);
   await page.getByRole("button", { name: "Close", exact: true }).click();
-  await page
-    .getByLabel("Import JSON", { exact: true })
-    .setInputFiles({
-      name: "invalid.json",
-      mimeType: "application/json",
-      buffer: Buffer.from('{"bad":true}'),
-    });
+  await page.getByLabel("Import JSON", { exact: true }).setInputFiles({
+    name: "invalid.json",
+    mimeType: "application/json",
+    buffer: Buffer.from('{"bad":true}'),
+  });
   await expect(page.getByText(/Invalid match file/)).toBeVisible();
   await expect(page.getByTestId("home-score")).toHaveText("1");
 });
@@ -240,3 +238,22 @@ for (const [width, height] of [
     }
   });
 }
+
+test("blank team names cannot create an unrecoverable match", async ({
+  page,
+}) => {
+  await page.getByRole("button", { name: "New match", exact: true }).click();
+  await page.locator("input[name=home]").fill("   ");
+  await page.getByRole("button", { name: "Create match", exact: true }).click();
+  await expect(page.getByRole("alert")).toHaveText(
+    "Enter two different, non-empty team names.",
+  );
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "Home vs Away" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Saved on this device", { exact: true }),
+  ).toBeVisible();
+});

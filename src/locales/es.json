@@ -92,7 +92,7 @@
   "backupNote": "Guarda copias JSON. Borrar los datos del navegador elimina los partidos locales.",
   "importError": "Archivo de partido no válido. Comprueba el formato JSON y los datos (máximo 20 MB).",
   "loadError": "No se pudo abrir el partido. El partido actual sigue aquí.",
-  "nameError": "Usa dos nombres de equipo distintos.",
+  "nameError": "Introduce dos nombres de equipo distintos y no vacíos.",
   "libraryHelp": "Partidos guardados en este navegador. Abrir otro partido pausa este reloj.",
   "newHelp": "El partido actual se conserva en Mis partidos.",
   "sanctionHelp": "Registra una sanción sin cambiar la posesión.",
