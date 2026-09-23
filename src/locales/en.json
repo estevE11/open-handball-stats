@@ -49,7 +49,7 @@
   "defenseSystem": "Defensive system",
   "defenseHelp": "Remembered for each team",
   "MAN_TO_MAN": "Man-to-man",
-  "OTHER": "Other / 5+1",
+  "OTHER": "Other",
   "GOAL": "Goal",
   "GK_SAVE": "Keeper save",
   "SHOT_OUT": "Off-target / post",
@@ -109,5 +109,6 @@
   "persistent": "Protect local storage",
   "persistGranted": "Persistent storage enabled. Keep exporting backups.",
   "persistDenied": "Your browser did not grant persistent storage. Keep JSON backups.",
-  "pwaError": "Offline setup failed. Reconnect and reload to retry."
+  "pwaError": "Offline setup failed. Reconnect and reload to retry.",
+  "defenseOther": "Other / 5+1"
 }

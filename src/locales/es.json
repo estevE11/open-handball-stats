@@ -49,7 +49,7 @@
   "defenseSystem": "Sistema defensivo",
   "defenseHelp": "Se recuerda para cada equipo",
   "MAN_TO_MAN": "Individual",
-  "OTHER": "Otro / 5+1",
+  "OTHER": "Otro",
   "GOAL": "Gol",
   "GK_SAVE": "Parada",
   "SHOT_OUT": "Fuera / Poste",
@@ -109,5 +109,6 @@
   "persistent": "Proteger almacenamiento local",
   "persistGranted": "Almacenamiento persistente activado. Sigue exportando copias.",
   "persistDenied": "Tu navegador no concedió almacenamiento persistente. Guarda copias JSON.",
-  "pwaError": "No se pudo activar el modo sin conexión. Conéctate y recarga para reintentar."
+  "pwaError": "No se pudo activar el modo sin conexión. Conéctate y recarga para reintentar.",
+  "defenseOther": "Otro / 5+1"
 }
