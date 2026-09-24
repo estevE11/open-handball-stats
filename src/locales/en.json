@@ -114,5 +114,7 @@
   "digit": "Digit",
   "increase": "Increase",
   "decrease": "Decrease",
-  "digitHelp": "Tap the arrows or type a digit. Each digit wraps independently."
+  "digitHelp": "Tap the arrows or type a digit. Each digit wraps independently.",
+  "darkMode": "Switch to dark mode",
+  "lightMode": "Switch to light mode"
 }

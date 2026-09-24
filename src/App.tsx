@@ -1,6 +1,9 @@
+import { usePreferencesStore } from "./store/preferencesStore";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useRegisterSW } from "virtual:pwa-register/react";
 import {
+  Moon,
+  Sun,
   ChevronRight,
   Download,
   FolderOpen,
@@ -21,6 +24,13 @@ import { EventStream } from "./components/app/EventStream";
 import { MatchDialogs, type DialogKind } from "./components/app/MatchDialogs";
 
 export default function App() {
+  const { theme, setTheme } = usePreferencesStore();
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute("content", theme === "dark" ? "#171d1a" : "#fafafa");
+  }, [theme]);
   const store = useMatchStore();
   const { match } = store;
   const { t, language, setLanguage } = useTranslation();
@@ -107,6 +117,14 @@ export default function App() {
           <small>v0.1</small>
         </a>
         <div className="header-actions">
+          <button
+            className="icon-button theme-toggle"
+            aria-label={t(theme === "dark" ? "lightMode" : "darkMode")}
+            title={t(theme === "dark" ? "lightMode" : "darkMode")}
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          >
+            {theme === "dark" ? <Sun size={19} /> : <Moon size={19} />}
+          </button>
           <div
             className="language-toggle"
             role="group"

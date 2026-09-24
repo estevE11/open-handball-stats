@@ -2,6 +2,7 @@ import { SegmentedControl } from "../ui/SegmentedControl";
 import { eventAppearance } from "./eventAppearance";
 import {
   ArrowLeftRight,
+  ArrowUpRight,
   Shield,
   Undo2,
   CircleDot,
@@ -72,6 +73,7 @@ export function TaggingPanel({
           <button
             key={type}
             className={`action ${className}`}
+            aria-haspopup={type === "TECHNICAL_FAULT" ? "dialog" : undefined}
             title={type === "REBOUND_REGAINED" ? t("reboundNote") : undefined}
             onClick={() =>
               type === "TECHNICAL_FAULT"
@@ -81,13 +83,21 @@ export function TaggingPanel({
           >
             <div className="action-top">
               <Icon size={26} strokeWidth={1.6} />
-              <span>
-                {type === "GOAL"
-                  ? "+1"
-                  : type === "REBOUND_REGAINED"
-                    ? "↳"
-                    : "↔"}
-              </span>
+              {type === "TECHNICAL_FAULT" ? (
+                <ArrowUpRight
+                  className="modal-indicator"
+                  size={18}
+                  aria-hidden="true"
+                />
+              ) : (
+                <span>
+                  {type === "GOAL"
+                    ? "+1"
+                    : type === "REBOUND_REGAINED"
+                      ? "↳"
+                      : "↔"}
+                </span>
+              )}
             </div>
             <strong>{t(type)}</strong>
             <small>{t(help)}</small>
@@ -96,22 +106,31 @@ export function TaggingPanel({
       </div>
       <div className="secondary-actions">
         <button
-          className="button secondary"
+          className="aux-action penalty-action"
           onClick={() => store.log("PENALTY_7M")}
         >
-          <CircleDot size={18} />
-          {t("PENALTY_7M")}
-        </button>
-        <button className="button secondary" onClick={onSanction}>
-          <RectangleVertical size={17} />
-          {t("SANCTION")}
+          <CircleDot size={25} strokeWidth={1.6} />
+          <strong>{t("PENALTY_7M")}</strong>
         </button>
         <button
-          className="button plain switch"
+          className="aux-action sanction-action"
+          aria-haspopup="dialog"
+          onClick={onSanction}
+        >
+          <ArrowUpRight
+            className="modal-indicator"
+            size={18}
+            aria-hidden="true"
+          />
+          <RectangleVertical size={25} strokeWidth={1.6} />
+          <strong>{t("SANCTION")}</strong>
+        </button>
+        <button
+          className="aux-action possession-action"
           onClick={store.switchPossession}
         >
-          <ArrowLeftRight size={17} />
-          {t("manualSwitch")}
+          <ArrowLeftRight size={25} strokeWidth={1.6} />
+          <strong>{t("manualSwitch")}</strong>
         </button>
       </div>
       <div className="defense-panel">

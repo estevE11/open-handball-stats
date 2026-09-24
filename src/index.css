@@ -1680,3 +1680,358 @@ h1 {
     transition: none;
   }
 }
+
+/* A full-width third row keeps secondary match actions within easy reach. */
+.secondary-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 12px;
+  margin: 12px 0 20px;
+}
+.aux-action {
+  position: relative;
+  min-width: 0;
+  min-height: 104px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 12px;
+  padding: 17px 20px;
+  border: 1px solid #d7e0d0;
+  border-radius: 9px;
+  background: #edf2e7;
+  color: #61794e;
+  text-align: left;
+  box-shadow: 0 1px 2px #24301d06;
+}
+.aux-action strong {
+  font-size: 15px;
+  font-weight: 550;
+  line-height: 1.35;
+}
+.sanction-action {
+  background: #f5eee4;
+  border-color: #e4d8c4;
+  color: #9b7f50;
+}
+.possession-action {
+  background: #e9efef;
+  border-color: #d1dddd;
+  color: #577b7c;
+}
+.aux-action:hover {
+  filter: brightness(0.97);
+  box-shadow: 0 3px 8px #23371a0c;
+}
+.aux-action > .modal-indicator {
+  position: absolute;
+  right: 14px;
+  top: 13px;
+}
+.action-top > .modal-indicator {
+  width: 18px;
+  height: 18px;
+  opacity: 0.8;
+}
+.theme-toggle {
+  border: 1px solid #dfe4dd;
+  color: #66795d;
+  background: #fff;
+}
+.event-action-icon {
+  color: var(--event-action-color);
+}
+@media (min-width: 900px) and (max-height: 900px) {
+  .secondary-actions {
+    gap: 10px;
+    margin: 10px 0 12px;
+  }
+  .aux-action {
+    min-height: 82px;
+    padding: 12px 14px;
+    gap: 8px;
+  }
+  .aux-action strong {
+    font-size: 13px;
+  }
+  .aux-action > svg:not(.modal-indicator) {
+    width: 22px;
+    height: 22px;
+  }
+}
+@media (max-width: 580px) {
+  .secondary-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .aux-action {
+    min-height: 106px;
+    padding: 16px;
+  }
+  .possession-action {
+    grid-column: 1 / -1;
+    min-height: 66px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+  }
+  .header-actions .theme-toggle {
+    order: 1;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  background: #171d1a;
+  color: #dce5da;
+}
+[data-theme="dark"] :is(.topbar, .scoreboard, .event-stream, .modal) {
+  background: #202923;
+  border-color: #3d4b3d;
+  color: #dce5da;
+}
+[data-theme="dark"] .scoreboard {
+  border-color: var(--possession-color);
+}
+[data-theme="dark"] .brand {
+  color: #e4ece0;
+}
+[data-theme="dark"]
+  :is(
+    .brand div > span,
+    .match-meta,
+    .match-meta .save-status,
+    .eyebrow > span,
+    .tag-heading p,
+    .section-label small,
+    .section-label em,
+    .tagging-bottom > span,
+    .dialog-note,
+    .dialog-description,
+    .stream-meta,
+    .empty-stream p,
+    .stream-footer,
+    .event-time small,
+    .event-detail > small,
+    .export-options small,
+    .match-row small
+  ) {
+  color: #a3b29a;
+}
+[data-theme="dark"]
+  :is(
+    .eyebrow,
+    .section-label,
+    .period-label,
+    .score-team small,
+    .score-team span,
+    .possession-badge,
+    .digit-group-label,
+    .sanction-team-label,
+    label,
+    .event-time,
+    .event-detail > span,
+    .event-detail p,
+    .footer-ecosystem,
+    .footer-ecosystem a,
+    .footer-data
+  ) {
+  color: #b0c0a6;
+}
+[data-theme="dark"]
+  :is(
+    .score-team strong,
+    .clock,
+    .stream-heading h2,
+    .event-detail > strong,
+    .empty-stream h3,
+    .modal-heading h2,
+    .export-options strong,
+    .match-row strong
+  ) {
+  color: #dae7d2;
+}
+[data-theme="dark"] .score-team.has-ball span {
+  color: #bdd7a7;
+}
+[data-theme="dark"]
+  :is(
+    .clock-panel,
+    .stream-meta,
+    .stream-footer,
+    .event-list li,
+    .defense-panel
+  ) {
+  border-color: #3c4939;
+}
+[data-theme="dark"]
+  :is(
+    .button.secondary,
+    .undo,
+    .theme-toggle,
+    .export-options > button,
+    .match-row
+  ) {
+  background: #29352a;
+  color: #c1d4b1;
+  border-color: #4c5e43;
+}
+[data-theme="dark"]
+  :is(
+    .button.secondary:hover,
+    .undo:hover,
+    .theme-toggle:hover,
+    .export-options > button:hover,
+    .match-row:hover
+  ) {
+  background: #374831;
+  border-color: #7c9869;
+}
+[data-theme="dark"] .button.primary {
+  background: #bdd1aa;
+  color: #1e301c;
+}
+[data-theme="dark"] .button.primary:hover {
+  background: #d3e4c3;
+}
+[data-theme="dark"] :is(.button.plain, .icon-button) {
+  color: #aabc9f;
+}
+[data-theme="dark"] :is(.button.plain:hover, .icon-button:hover) {
+  background: #354330;
+  color: #e0efd5;
+}
+[data-theme="dark"] :is(.language-toggle, .segmented) {
+  background: #19221b;
+  border-color: #3e4f36;
+}
+[data-theme="dark"] .language-toggle button {
+  color: #a3b797;
+}
+[data-theme="dark"] .language-toggle button[aria-pressed="true"] {
+  background: #3d5033;
+  color: #e0eed3;
+}
+[data-theme="dark"] .segmented button {
+  color: #a9ba9c;
+}
+[data-theme="dark"] .segment-selection {
+  background: #35452c;
+  border-color: #566d44;
+  box-shadow: 0 2px 5px #0002;
+}
+[data-theme="dark"] .sliding-segments button[aria-pressed="true"],
+[data-theme="dark"] .sliding-segments button:hover {
+  background: transparent;
+  color: #e0efcf;
+  border-color: transparent;
+}
+[data-theme="dark"] .defense .segment-selection {
+  background: #3b502d;
+  border-color: #69834f;
+}
+[data-theme="dark"]
+  :is(
+    .competition,
+    .clock-toggle,
+    .stream-heading > span,
+    .event-detail > strong b,
+    .empty-symbol,
+    .digit-step
+  ) {
+  background: #2d3c27;
+  border-color: #4a5d3c;
+  color: #bdd4a7;
+}
+[data-theme="dark"] :is(.possession-badge b, .brand > small) {
+  border-color: #4b5c40;
+  color: #bdcfac;
+}
+[data-theme="dark"] .action.goal {
+  background: #2a3c24;
+  border-color: #49603a;
+  color: #b0d095;
+}
+[data-theme="dark"] .action.save {
+  background: #263541;
+  border-color: #3f566c;
+  color: #a2c7e4;
+}
+[data-theme="dark"] .action.out {
+  background: #3a3527;
+  border-color: #62583d;
+  color: #d8c08c;
+}
+[data-theme="dark"] .action.steal {
+  background: #2e3927;
+  border-color: #4b603b;
+  color: #b7ce9d;
+}
+[data-theme="dark"] .action.fault {
+  background: #3f2e26;
+  border-color: #70503e;
+  color: #e0b196;
+}
+[data-theme="dark"] .action.rebound {
+  background: #352c3e;
+  border-color: #5e4b70;
+  color: #c7b2df;
+}
+[data-theme="dark"] .penalty-action {
+  background: #2c3826;
+  border-color: #506344;
+  color: #bbd3a6;
+}
+[data-theme="dark"] .sanction-action {
+  background: #3c3223;
+  border-color: #6a5434;
+  color: #e1c393;
+}
+[data-theme="dark"] .possession-action {
+  background: #243739;
+  border-color: #3d6061;
+  color: #a2ced0;
+}
+[data-theme="dark"] :is(.action:hover, .aux-action:hover) {
+  filter: brightness(1.12);
+}
+[data-theme="dark"] .event-action-icon {
+  color: color-mix(in srgb, var(--event-action-color) 65%, white);
+  background: color-mix(in srgb, var(--event-action-color) 22%, #202923);
+}
+[data-theme="dark"] .event-list li::before {
+  background: color-mix(in srgb, var(--event-team-color) 55%, #202923);
+}
+[data-theme="dark"] .empty-lines i {
+  background: #2c3729;
+}
+[data-theme="dark"] .app-footer {
+  background: #1a211b;
+  border-color: #35422f;
+}
+[data-theme="dark"] :is(input, select, textarea) {
+  background: #18201a;
+  border-color: #4b5e40;
+  color: #dce9d2;
+}
+[data-theme="dark"] input::placeholder {
+  color: #94a48a;
+}
+[data-theme="dark"] .clock-digit input {
+  color: #d7e9c7;
+}
+[data-theme="dark"] .digit-step:hover {
+  background: #425934;
+}
+[data-theme="dark"] .modal::backdrop {
+  background: #080e0ac2;
+}
+[data-theme="dark"] .notice {
+  background: #443922;
+  color: #e8cc92;
+}
+[data-theme="dark"] .error {
+  color: #ecaf98;
+}

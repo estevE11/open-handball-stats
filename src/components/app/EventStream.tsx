@@ -61,7 +61,11 @@ export function EventStream({
               >
                 <span
                   className="event-action-icon"
-                  style={{ color: appearance.color }}
+                  style={
+                    {
+                      "--event-action-color": appearance.color,
+                    } as CSSProperties
+                  }
                   aria-hidden="true"
                 >
                   <Icon size={18} strokeWidth={1.7} />

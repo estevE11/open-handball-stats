@@ -365,3 +365,101 @@ test("per-digit clock editing wraps safely and supports cancel and undo", async 
     page.getByRole("button", { name: "Adjust clock", exact: true }),
   ).toHaveText("00:00");
 });
+
+test("larger auxiliary controls, modal markers and saved dark mode", async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 1024, height: 820 });
+  const aux = page.locator(".secondary-actions");
+  await expect(aux.getByRole("button")).toHaveCount(3);
+  for (const button of await aux.getByRole("button").all()) {
+    const box = (await button.boundingBox())!;
+    expect(box.width).toBeGreaterThan(180);
+    expect(box.height).toBeGreaterThanOrEqual(80);
+  }
+  await expect(page.locator(".tagging-panel .modal-indicator")).toHaveCount(2);
+  await expect(page.locator(".action.fault")).toHaveAttribute(
+    "aria-haspopup",
+    "dialog",
+  );
+  await expect(page.locator(".sanction-action")).toHaveAttribute(
+    "aria-haspopup",
+    "dialog",
+  );
+  await page
+    .getByRole("button", { name: "Switch possession", exact: true })
+    .click();
+  await expect(page.locator(".scoreboard [role=status]")).toHaveText(
+    "Away attacking",
+  );
+  await page.screenshot({
+    path: testInfo.outputPath("tablet-light.png"),
+    fullPage: true,
+  });
+  await page.getByRole("button", { name: "Switch to dark mode" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await expect(page.locator(".scoreboard")).toHaveCSS(
+    "background-color",
+    "rgb(32, 41, 35)",
+  );
+  await page.getByRole("button", { name: /Goal Add a goal/ }).click();
+  await page.screenshot({
+    path: testInfo.outputPath("tablet-dark.png"),
+    fullPage: true,
+  });
+  await page
+    .getByRole("button", { name: "Cards & suspensions", exact: true })
+    .click();
+  await expect(page.getByRole("dialog")).toHaveCSS(
+    "background-color",
+    "rgb(32, 41, 35)",
+  );
+  const selection = page.locator(".sanction-teams .segment-selection");
+  const selectedTeam = page.locator(
+    ".sanction-teams button[aria-pressed=true]",
+  );
+  await expect(selection).toHaveCSS("height", "48px");
+  const selectedBounds = (await selectedTeam.boundingBox())!;
+  const selectionBounds = (await selection.boundingBox())!;
+  expect(Math.abs(selectionBounds.width - selectedBounds.width)).toBeLessThan(
+    2,
+  );
+  expect(Math.abs(selectionBounds.x - selectedBounds.x)).toBeLessThan(2);
+  await page.screenshot({
+    path: testInfo.outputPath("sanctions-dark.png"),
+    fullPage: true,
+  });
+  await page.getByRole("button", { name: "Close", exact: true }).click();
+  await expect(
+    page.getByText("Saved on this device", { exact: true }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.getByRole("button", { name: "ES", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Activar modo claro" }),
+  ).toBeVisible();
+  await page.screenshot({
+    path: testInfo.outputPath("phone-dark.png"),
+    fullPage: true,
+  });
+  await page.getByRole("button", { name: "Activar modo claro" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+});
+
+test("dark mode follows the device until an explicit preference is saved", async ({
+  page,
+}) => {
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await page.getByRole("button", { name: "Switch to light mode" }).click();
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+});

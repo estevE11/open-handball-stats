@@ -4,6 +4,7 @@ export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
   use: {
+    colorScheme: "light",
     baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:4173",
     channel: process.env.CI ? "chromium" : "chrome",
     viewport: { width: 1440, height: 1000 },

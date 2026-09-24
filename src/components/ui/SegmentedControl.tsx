@@ -19,18 +19,25 @@ export function SegmentedControl<T extends string>({
     const group = ref.current;
     if (!group) return;
     const buttons = Array.from(group.querySelectorAll("button"));
+    let frame = 0;
     const update = () => {
       const active = buttons.find((button) => button.dataset.value === value);
-      if (!active) return;
+      if (!active || !active.offsetWidth || !active.offsetHeight) return;
       group.style.setProperty("--selection-x", `${active.offsetLeft}px`);
       group.style.setProperty("--selection-y", `${active.offsetTop}px`);
       group.style.setProperty("--selection-width", `${active.offsetWidth}px`);
       group.style.setProperty("--selection-height", `${active.offsetHeight}px`);
+      if (!group.dataset.ready) {
+        // Dialog children initially have no layout. Paint the first real size
+        // before allowing transitions on subsequent selection changes.
+        group.getBoundingClientRect();
+        cancelAnimationFrame(frame);
+        frame = requestAnimationFrame(() => {
+          group.dataset.ready = "true";
+        });
+      }
     };
     update();
-    const frame = requestAnimationFrame(() => {
-      group.dataset.ready = "true";
-    });
     const observer = new ResizeObserver(update);
     buttons.forEach((button) => observer.observe(button));
     return () => {

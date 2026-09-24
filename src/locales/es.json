@@ -114,5 +114,7 @@
   "digit": "Dígito",
   "increase": "Subir",
   "decrease": "Bajar",
-  "digitHelp": "Pulsa las flechas o escribe un dígito. Cada dígito cambia de forma independiente."
+  "digitHelp": "Pulsa las flechas o escribe un dígito. Cada dígito cambia de forma independiente.",
+  "darkMode": "Activar modo oscuro",
+  "lightMode": "Activar modo claro"
 }
