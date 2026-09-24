@@ -23,14 +23,14 @@ Browser tests use installed Google Chrome locally. For Chromium, run `npx playwr
 ## Live tagging
 
 - The header theme button switches between light and dark appearances. The initial theme uses the device preference; explicit choices persist on this browser. All tagging controls and dialogs support both themes.
-- The larger lower action row contains 7m, sanctions, and manual possession switching. Only Technical fault and Sanctions show a top-right arrow to indicate a dialog.
+- The four-button lower action row contains Possession regained, 7m, sanctions, and manual possession switching (two columns on phones). The center of the second row is Shot blocked, with Technical fault to its right. Only Technical fault and Sanctions show a top-right arrow to indicate a dialog.
 - Dialogs close when tapping the backdrop or pressing Escape. Unsaved edits are discarded when dismissed.
 - Header language toggle switches all interface terminology instantly and remembers EN/ES on this browser. Team names are user data and are not translated.
 - The scoreboard glows in the current attacking team’s color and follows automatic flips, manual switches, and undo. An oversized, clipped handball sits behind the attacking team and slides/rotates to the other side with a soft arrival bounce. Reduced-motion preferences disable the movement.
 - Start/pause or adjust the cumulative match clock using independent digit inputs with up/down buttons and keyboard arrow support. Its persisted wall-clock anchor avoids drift when the page is throttled or refreshed. The clock continues while the app is closed until you pause it. Moving to the next period pauses the clock without resetting elapsed match time; the clock remains paused after undoing a period change.
 - Select **Static**, **Counterattack**, or **Counterattack attempted** above the action grid. Every possession flip resets this to Static.
 - **Goal**, **Keeper save**, **Off-target / post**, **Steal**, and a chosen **Technical fault** end a possession. Events record the attacking and defending teams and tactics **before** the flip. Goals alone increase the score.
-- **Possession regained**, **7m penalty**, and **Cards & suspensions** retain the current possession and phase. A 7m tag records an award, not a scored goal: log the shot result separately. The sanctions team toggle defaults to the defending team each time the dialog opens. Sanctions identify the sanctioned team and support two-minute exclusions and yellow/red/blue cards.
+- **Shot blocked**, **Possession regained**, **7m penalty**, and **Cards & suspensions** retain the current possession and phase. A blocked shot records the defensive block without assuming a change of possession; use Switch possession if the defending team wins the ball. A 7m tag records an award, not a scored goal: log the shot result separately. The sanctions team toggle defaults to the defending team each time the dialog opens. Sanctions identify the sanctioned team and support two-minute exclusions and yellow/red/blue cards.
 - **Possession regained** keeps the _currently displayed attacker_. To correct a preceding shot's auto-flip, undo that shot first or use Switch possession; the rebound action never silently reverses the preceding event.
 - Tactical selectors use sliding selection highlights, with reduced-motion preferences respected.
 - Each team's last defense is independent: 6:0, 5:1, 4:2, 3:2:1, 3:3, Individual, or Other / 5+1. Switching possession restores the new defender's saved formation.
@@ -39,7 +39,7 @@ Browser tests use installed Google Chrome locally. For Chromium, run `npx playwr
 
 ## Portable data
 
-The version 1 types and runtime validation live in `src/types/match.ts`. Stable team IDs are `home` and `away`. The requested match schema is extended with `schemaVersion`, match clock/period/attack state, optional event team IDs, `SANCTION`, `POSSESSION_SWITCH`, sanction subtypes, and the sanctioned team ID. Score is derived from goal events, so undo cannot leave stale score counters.
+The version 1 types and runtime validation live in `src/types/match.ts`. Stable team IDs are `home` and `away`. The requested match schema is extended with `schemaVersion`, match clock/period/attack state, optional event team IDs, `SHOT_BLOCKED`, `SANCTION`, `POSSESSION_SWITCH`, sanction subtypes, and the sanctioned team ID. Score is derived from goal events, so undo cannot leave stale score counters.
 
 ### CSV
 

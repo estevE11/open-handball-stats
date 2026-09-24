@@ -6,6 +6,7 @@ import {
   Shield,
   Undo2,
   CircleDot,
+  CornerDownLeft,
   RectangleVertical,
 } from "lucide-react";
 import { useTranslation } from "../../hooks/useTranslation";
@@ -32,8 +33,8 @@ export function TaggingPanel({
     { type: "GK_SAVE", help: "flipHelp" },
     { type: "SHOT_OUT", help: "flipHelp" },
     { type: "STEAL", help: "flipHelp" },
+    { type: "SHOT_BLOCKED", help: "retainHelp" },
     { type: "TECHNICAL_FAULT", help: "faultHelp" },
-    { type: "REBOUND_REGAINED", help: "retainHelp" },
   ].map((action) => ({
     ...action,
     ...eventAppearance[action.type as EventType],
@@ -74,7 +75,6 @@ export function TaggingPanel({
             key={type}
             className={`action ${className}`}
             aria-haspopup={type === "TECHNICAL_FAULT" ? "dialog" : undefined}
-            title={type === "REBOUND_REGAINED" ? t("reboundNote") : undefined}
             onClick={() =>
               type === "TECHNICAL_FAULT"
                 ? onFault()
@@ -91,11 +91,7 @@ export function TaggingPanel({
                 />
               ) : (
                 <span>
-                  {type === "GOAL"
-                    ? "+1"
-                    : type === "REBOUND_REGAINED"
-                      ? "↳"
-                      : "↔"}
+                  {type === "GOAL" ? "+1" : type === "SHOT_BLOCKED" ? "↳" : "↔"}
                 </span>
               )}
             </div>
@@ -105,6 +101,14 @@ export function TaggingPanel({
         ))}
       </div>
       <div className="secondary-actions">
+        <button
+          className="aux-action rebound-action"
+          title={t("reboundNote")}
+          onClick={() => store.log("REBOUND_REGAINED")}
+        >
+          <CornerDownLeft size={25} strokeWidth={1.6} />
+          <strong>{t("REBOUND_REGAINED")}</strong>
+        </button>
         <button
           className="aux-action penalty-action"
           onClick={() => store.log("PENALTY_7M")}

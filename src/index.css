@@ -643,7 +643,8 @@ h1 {
   border-color: #e9d8ce;
   color: #b28265;
 }
-.action.rebound {
+.action.rebound,
+.aux-action.rebound-action {
   background: #f0edf5;
   border-color: #e0d8ea;
   color: #8b779f;
@@ -1684,7 +1685,7 @@ h1 {
 /* A full-width third row keeps secondary match actions within easy reach. */
 .secondary-actions {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   align-items: stretch;
   gap: 12px;
   margin: 12px 0 20px;
@@ -1769,13 +1770,6 @@ h1 {
   .aux-action {
     min-height: 106px;
     padding: 16px;
-  }
-  .possession-action {
-    grid-column: 1 / -1;
-    min-height: 66px;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
   }
   .header-actions .theme-toggle {
     order: 1;
@@ -1974,7 +1968,8 @@ h1 {
   border-color: #70503e;
   color: #e0b196;
 }
-[data-theme="dark"] .action.rebound {
+[data-theme="dark"] .action.rebound,
+[data-theme="dark"] .aux-action.rebound-action {
   background: #352c3e;
   border-color: #5e4b70;
   color: #c7b2df;
@@ -2102,4 +2097,15 @@ h1 {
   .possession-ball {
     transition: none;
   }
+}
+
+.action.blocked {
+  background: #e5f0ec;
+  border-color: #cbded7;
+  color: #538982;
+}
+[data-theme="dark"] .action.blocked {
+  background: #253b36;
+  border-color: #41665c;
+  color: #a1d2c4;
 }

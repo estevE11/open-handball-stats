@@ -116,5 +116,6 @@
   "decrease": "Decrease",
   "digitHelp": "Tap the arrows or type a digit. Each digit wraps independently.",
   "darkMode": "Switch to dark mode",
-  "lightMode": "Switch to light mode"
+  "lightMode": "Switch to light mode",
+  "SHOT_BLOCKED": "Shot blocked"
 }

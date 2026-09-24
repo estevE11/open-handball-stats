@@ -2,6 +2,21 @@ import { describe, expect, it } from "vitest";
 import { exportCSV, exportJSON, exportXML, importJSON } from "./exportService";
 import { logEvent, newMatch } from "./matchEngine";
 describe("portable exports", () => {
+  it("preserves blocked shots across every export format and JSON re-import", () => {
+    const match = logEvent(
+      { ...newMatch(), attackPhase: "COUNTERATTACK" },
+      "SHOT_BLOCKED",
+    );
+    const restored = importJSON(exportJSON(match));
+    expect(restored.events[0]).toMatchObject({
+      eventType: "SHOT_BLOCKED",
+      isPossessionFlipped: false,
+      attackPhase: "COUNTERATTACK",
+    });
+    expect(restored.currentAttackingTeamId).toBe("home");
+    expect(exportCSV(match)).toContain('"SHOT_BLOCKED"');
+    expect(exportXML(match)).toContain("<text>SHOT_BLOCKED</text>");
+  });
   it("round-trips complete match tactics with fresh identifiers", () => {
     const match = logEvent(
       {

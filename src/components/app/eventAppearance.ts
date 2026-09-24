@@ -5,6 +5,7 @@ import {
   Crosshair,
   Footprints,
   Hand,
+  ShieldBan,
   RectangleVertical,
   Target,
   Zap,
@@ -14,6 +15,7 @@ export const eventAppearance = {
   GOAL: { icon: Target, color: "#54723c", className: "goal" },
   GK_SAVE: { icon: Hand, color: "#5c7e9e", className: "save" },
   SHOT_OUT: { icon: Crosshair, color: "#9c865c", className: "out" },
+  SHOT_BLOCKED: { icon: ShieldBan, color: "#538982", className: "blocked" },
   STEAL: { icon: Zap, color: "#778b5c", className: "steal" },
   TECHNICAL_FAULT: { icon: Footprints, color: "#b28265", className: "fault" },
   REBOUND_REGAINED: {

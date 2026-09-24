@@ -116,5 +116,6 @@
   "decrease": "Bajar",
   "digitHelp": "Pulsa las flechas o escribe un dígito. Cada dígito cambia de forma independiente.",
   "darkMode": "Activar modo oscuro",
-  "lightMode": "Activar modo claro"
+  "lightMode": "Activar modo claro",
+  "SHOT_BLOCKED": "Lanzamiento bloqueado"
 }

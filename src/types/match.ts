@@ -26,6 +26,7 @@ export const eventTypes = [
   "GOAL",
   "GK_SAVE",
   "SHOT_OUT",
+  "SHOT_BLOCKED",
   "STEAL",
   "TECHNICAL_FAULT",
   "REBOUND_REGAINED",

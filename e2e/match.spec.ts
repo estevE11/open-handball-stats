@@ -48,7 +48,7 @@ test("tablet tagging preserves team tactics, score, undo, sanctions and reload",
     page.getByRole("list", { name: "Live event stream" }).getByRole("listitem"),
   ).toHaveCount(2);
   await page
-    .getByRole("button", { name: /Possession regained Keep current/ })
+    .getByRole("button", { name: "Possession regained", exact: true })
     .click();
   await page.getByRole("button", { name: "7m penalty", exact: true }).click();
   await page
@@ -415,10 +415,10 @@ test("larger auxiliary controls, modal markers and saved dark mode", async ({
 }, testInfo) => {
   await page.setViewportSize({ width: 1024, height: 820 });
   const aux = page.locator(".secondary-actions");
-  await expect(aux.getByRole("button")).toHaveCount(3);
+  await expect(aux.getByRole("button")).toHaveCount(4);
   for (const button of await aux.getByRole("button").all()) {
     const box = (await button.boundingBox())!;
-    expect(box.width).toBeGreaterThan(180);
+    expect(box.width).toBeGreaterThan(140);
     expect(box.height).toBeGreaterThanOrEqual(80);
   }
   await expect(page.locator(".tagging-panel .modal-indicator")).toHaveCount(2);
@@ -623,4 +623,53 @@ test("all dialogs dismiss on backdrop clicks, but inside clicks preserve drafts"
   await page.mouse.click(2, 2);
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(page.getByText("Unsaved draft")).toHaveCount(0);
+});
+
+test("blocked shot sits in the center and retains possession through reload and undo", async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 1024, height: 820 });
+  const main = page.locator(".action-grid button");
+  await expect(main.nth(3)).toContainText("Steal");
+  await expect(main.nth(4)).toContainText("Shot blocked");
+  await expect(main.nth(5)).toContainText("Technical fault");
+  const bottom = page.locator(".secondary-actions button");
+  await expect(bottom).toHaveCount(4);
+  await expect(bottom.nth(0)).toContainText("Possession regained");
+  const boxes = await Promise.all(
+    (await bottom.all()).map((button) => button.boundingBox()),
+  );
+  expect(new Set(boxes.map((box) => box!.y)).size).toBe(1);
+  const phase = page.getByRole("group", { name: "Attack phase", exact: true });
+  await phase
+    .getByRole("button", { name: "Counterattack", exact: true })
+    .click();
+  await page.getByRole("button", { name: /Shot blocked Keep current/ }).click();
+  await expect(page.locator(".scoreboard [role=status]")).toHaveText(
+    "Home attacking",
+  );
+  await expect(page.getByTestId("home-score")).toHaveText("0");
+  await expect(
+    phase.getByRole("button", { name: "Counterattack", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".event-list li").first()).toContainText(
+    "Shot blocked",
+  );
+  await expect(
+    page.getByText("Saved on this device", { exact: true }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(page.locator(".event-list li").first()).toContainText(
+    "Shot blocked",
+  );
+  await page.screenshot({
+    path: testInfo.outputPath("blocked-shot-tablet.png"),
+    fullPage: true,
+  });
+  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  await expect(page.locator(".event-list li")).toHaveCount(0);
+  await page.getByRole("button", { name: "ES", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: /Lanzamiento bloqueado/ }),
+  ).toBeVisible();
 });

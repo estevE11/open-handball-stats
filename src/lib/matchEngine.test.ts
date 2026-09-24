@@ -37,17 +37,19 @@ describe("possession engine", () => {
     expect(score(next, "home")).toBe(type === "GOAL" ? 1 : 0);
     expect(match.events).toHaveLength(0);
   });
-  it.each(["REBOUND_REGAINED", "PENALTY_7M", "SANCTION"] as const)(
-    "%s retains possession and phase",
-    (type) => {
-      const match = { ...newMatch(), attackPhase: "COUNTERATTACK" as const };
-      const next = logEvent(match, type);
-      expect(next.currentAttackingTeamId).toBe("home");
-      expect(next.currentPossessionIndex).toBe(1);
-      expect(next.attackPhase).toBe("COUNTERATTACK");
-      expect(next.events[0].isPossessionFlipped).toBe(false);
-    },
-  );
+  it.each([
+    "REBOUND_REGAINED",
+    "SHOT_BLOCKED",
+    "PENALTY_7M",
+    "SANCTION",
+  ] as const)("%s retains possession and phase", (type) => {
+    const match = { ...newMatch(), attackPhase: "COUNTERATTACK" as const };
+    const next = logEvent(match, type);
+    expect(next.currentAttackingTeamId).toBe("home");
+    expect(next.currentPossessionIndex).toBe(1);
+    expect(next.attackPhase).toBe("COUNTERATTACK");
+    expect(next.events[0].isPossessionFlipped).toBe(false);
+  });
   it("restores each team defense through repeated flips", () => {
     const match = newMatch();
     match.homeTeam.currentDefense = "3:2:1";
