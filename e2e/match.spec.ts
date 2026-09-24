@@ -287,10 +287,25 @@ test("blank team names cannot create an unrecoverable match", async ({
 
 test("possession glow, sliding tactics, defending-team default and event styling", async ({
   page,
-}) => {
+}, testInfo) => {
   await expect(page).toHaveTitle("Open Handball Stats");
   const scoreboard = page.locator(".scoreboard");
   await expect(scoreboard).toHaveCSS("border-top-color", "rgb(86, 132, 163)");
+  const ball = page.locator(".possession-ball");
+  const track = page.locator(".possession-ball-track");
+  const boardBounds = (await scoreboard.boundingBox())!;
+  const homeBall = (await ball.boundingBox())!;
+  expect(homeBall.height).toBeGreaterThan(boardBounds.height);
+  expect(homeBall.x + homeBall.width / 2).toBeLessThan(
+    boardBounds.x + boardBounds.width / 2,
+  );
+  await expect(page.locator(".possession-ball-clip")).toHaveCSS(
+    "overflow",
+    "hidden",
+  );
+  await scoreboard.screenshot({
+    path: testInfo.outputPath("possession-home.png"),
+  });
   const phase = page.getByRole("group", { name: "Attack phase", exact: true });
   const before = await phase.locator(".segment-selection").boundingBox();
   await phase
@@ -303,6 +318,16 @@ test("possession glow, sliding tactics, defending-team default and event styling
     .toBeGreaterThan(before!.x + 20);
   await page.getByRole("button", { name: /Goal Add a goal/ }).click();
   await expect(scoreboard).toHaveCSS("border-top-color", "rgb(200, 146, 71)");
+  await track.evaluate((el) =>
+    Promise.all(el.getAnimations().map((animation) => animation.finished)),
+  );
+  const awayBall = (await ball.boundingBox())!;
+  expect(awayBall.x + awayBall.width / 2).toBeGreaterThan(
+    boardBounds.x + boardBounds.width / 2,
+  );
+  await scoreboard.screenshot({
+    path: testInfo.outputPath("possession-away.png"),
+  });
   const event = page.locator(".event-list li").first();
   await expect(event.locator(".event-action-icon svg")).toBeVisible();
   await expect(event.locator(".event-action-icon")).toHaveCSS(
@@ -342,6 +367,13 @@ test("possession glow, sliding tactics, defending-team default and event styling
   await page.getByRole("button", { name: "Undo", exact: true }).click();
   await page.getByRole("button", { name: "Undo", exact: true }).click();
   await expect(scoreboard).toHaveCSS("border-top-color", "rgb(86, 132, 163)");
+  await expect(scoreboard).toHaveAttribute("data-attacker", "home");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page
+    .getByRole("button", { name: "Switch possession", exact: true })
+    .click();
+  await expect(track).toHaveCSS("transition-duration", "0s");
+  await expect(ball).toHaveCSS("transition-duration", "0s");
 });
 
 test("per-digit clock editing wraps safely and supports cancel and undo", async ({

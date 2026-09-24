@@ -1,3 +1,4 @@
+import { PossessionBall } from "./components/app/PossessionBall";
 import { usePreferencesStore } from "./store/preferencesStore";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useRegisterSW } from "virtual:pwa-register/react";
@@ -258,6 +259,7 @@ export default function App() {
         >
           <div
             className="scoreboard"
+            data-attacker={match.currentAttackingTeamId}
             style={
               {
                 "--possession-color": teamOf(
@@ -267,6 +269,7 @@ export default function App() {
               } as CSSProperties
             }
           >
+            <PossessionBall />
             <span className="sr-only" role="status">
               {teamOf(match, match.currentAttackingTeamId).name}{" "}
               {t("attacking")}

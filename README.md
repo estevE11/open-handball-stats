@@ -26,7 +26,7 @@ Browser tests use installed Google Chrome locally. For Chromium, run `npx playwr
 - The larger lower action row contains 7m, sanctions, and manual possession switching. Only Technical fault and Sanctions show a top-right arrow to indicate a dialog.
 - Dialogs close when tapping the backdrop or pressing Escape. Unsaved edits are discarded when dismissed.
 - Header language toggle switches all interface terminology instantly and remembers EN/ES on this browser. Team names are user data and are not translated.
-- The scoreboard glows in the current attacking team’s color and follows automatic flips, manual switches, and undo.
+- The scoreboard glows in the current attacking team’s color and follows automatic flips, manual switches, and undo. An oversized, clipped handball sits behind the attacking team and slides/rotates to the other side with a soft arrival bounce. Reduced-motion preferences disable the movement.
 - Start/pause or adjust the cumulative match clock using independent digit inputs with up/down buttons and keyboard arrow support. Its persisted wall-clock anchor avoids drift when the page is throttled or refreshed. The clock continues while the app is closed until you pause it. Moving to the next period pauses the clock without resetting elapsed match time; the clock remains paused after undoing a period change.
 - Select **Static**, **Counterattack**, or **Counterattack attempted** above the action grid. Every possession flip resets this to Static.
 - **Goal**, **Keeper save**, **Off-target / post**, **Steal**, and a chosen **Technical fault** end a possession. Events record the attacking and defending teams and tactics **before** the flip. Goals alone increase the score.

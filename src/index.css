@@ -2035,3 +2035,71 @@ h1 {
 [data-theme="dark"] .error {
   color: #ecaf98;
 }
+
+/* One continuous ball travels with possession; oversized artwork stays clipped. */
+.scoreboard {
+  position: relative;
+  isolation: isolate;
+}
+.possession-ball-clip {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+.possession-ball-track {
+  position: absolute;
+  inset: 0;
+  transform: translateX(0);
+  transition: transform 540ms cubic-bezier(0.2, 0.82, 0.26, 1.12);
+}
+.scoreboard[data-attacker="away"] .possession-ball-track {
+  transform: translateX(76%);
+}
+.possession-ball {
+  position: absolute;
+  height: 185%;
+  width: auto;
+  max-width: none;
+  aspect-ratio: 1;
+  top: 50%;
+  left: 12%;
+  transform: translate(-50%, -50%) rotate(-24deg);
+  color: var(--possession-color);
+  opacity: 0.2;
+  transition:
+    transform 540ms cubic-bezier(0.2, 0.82, 0.26, 1.12),
+    color 220ms ease;
+}
+.scoreboard[data-attacker="away"] .possession-ball {
+  transform: translate(-50%, -50%) rotate(46deg);
+}
+.scoreboard > .score-team,
+.scoreboard > .clock-panel {
+  position: relative;
+  z-index: 1;
+}
+[data-theme="dark"] .possession-ball {
+  opacity: 0.3;
+}
+@media (max-width: 580px) {
+  .possession-ball {
+    height: 145%;
+    left: 17%;
+    opacity: 0.15;
+  }
+  .scoreboard[data-attacker="away"] .possession-ball-track {
+    transform: translateX(66%);
+  }
+  [data-theme="dark"] .possession-ball {
+    opacity: 0.24;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .possession-ball-track,
+  .possession-ball {
+    transition: none;
+  }
+}
