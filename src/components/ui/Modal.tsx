@@ -12,6 +12,17 @@ export function Modal({
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const id = useId();
+  const startedOutside = useRef(false);
+  function outside(clientX: number, clientY: number) {
+    const bounds = ref.current?.getBoundingClientRect();
+    return Boolean(
+      bounds &&
+      (clientX < bounds.left ||
+        clientX > bounds.right ||
+        clientY < bounds.top ||
+        clientY > bounds.bottom),
+    );
+  }
   const { t } = useTranslation();
   useEffect(() => {
     const dialog = ref.current;
@@ -23,6 +34,20 @@ export function Modal({
       ref={ref}
       className="modal"
       aria-labelledby={id}
+      onPointerDown={(event) => {
+        startedOutside.current =
+          event.target === event.currentTarget &&
+          outside(event.clientX, event.clientY);
+      }}
+      onClick={(event) => {
+        if (
+          startedOutside.current &&
+          event.target === event.currentTarget &&
+          outside(event.clientX, event.clientY)
+        )
+          onClose();
+        startedOutside.current = false;
+      }}
       onCancel={(e) => {
         e.preventDefault();
         onClose();

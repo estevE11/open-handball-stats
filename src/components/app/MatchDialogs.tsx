@@ -11,7 +11,7 @@ import {
 import { Modal } from "../ui/Modal";
 import { useTranslation } from "../../hooks/useTranslation";
 import { useMatchStore, flushSaves } from "../../store/matchStore";
-import { db } from "../../lib/browserStorage";
+import { db, loadMatchHistory } from "../../lib/browserStorage";
 import { gameSeconds, newMatch, score, stopClock } from "../../lib/matchEngine";
 import { downloadMatch } from "../../lib/exportService";
 import {
@@ -66,7 +66,8 @@ export function MatchDialogs({
         setError("saveError");
         return;
       }
-      store.replace(stopClock(next));
+      const history = await loadMatchHistory(next);
+      store.replace(stopClock(next), history);
       await flushSaves();
       if (useMatchStore.getState().saveStatus !== "saved") {
         setError("saveError");

@@ -159,7 +159,7 @@ export function TaggingPanel({
         <span>{t("allLocal")}</span>
         <button
           className="button undo"
-          disabled={!store.history.length}
+          disabled={!store.history.length && !match.events.length}
           onClick={store.undo}
           title={t("undoHelp")}
         >

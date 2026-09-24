@@ -125,6 +125,18 @@ test("JSON import/export, invalid import isolation, CSV and XML downloads", asyn
   });
   await expect(page.getByText(/Invalid match file/)).toBeVisible();
   await expect(page.getByTestId("home-score")).toHaveText("1");
+  // Imported matches have no local action journal: use last-event undo.
+  await page.reload();
+  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  await expect(page.getByTestId("home-score")).toHaveText("0");
+  await expect(page.locator(".scoreboard [role=status]")).toHaveText(
+    "Home attacking",
+  );
+  await expect(
+    page.getByText("Saved on this device", { exact: true }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(page.getByTestId("home-score")).toHaveText("0");
 });
 
 test("language, new match library, notes and clock controls", async ({
@@ -462,4 +474,121 @@ test("dark mode follows the device until an explicit preference is saved", async
   await page.getByRole("button", { name: "Switch to light mode" }).click();
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+});
+
+test("undo survives reloads and reopening a match with exact action history", async ({
+  page,
+}) => {
+  const saved = () =>
+    expect(
+      page.getByText("Saved on this device", { exact: true }),
+    ).toBeVisible();
+  const phase = page.getByRole("group", { name: "Attack phase", exact: true });
+  const defense = page.getByRole("group", {
+    name: "Defensive system",
+    exact: true,
+  });
+  await phase
+    .getByRole("button", { name: "Counterattack", exact: true })
+    .click();
+  await defense.getByRole("button", { name: "5:1", exact: true }).click();
+  await page.getByRole("button", { name: /Goal Add a goal/ }).click();
+  await page
+    .getByRole("button", { name: "Edit event note", exact: true })
+    .click();
+  await page.getByLabel("Notes (optional)").fill("A note to undo after reload");
+  await page.getByRole("button", { name: "Save note", exact: true }).click();
+  await saved();
+  await page.reload();
+  await expect(
+    page.getByRole("button", { name: "Undo", exact: true }),
+  ).toBeEnabled();
+  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  await expect(page.getByText("A note to undo after reload")).toHaveCount(0);
+  await expect(page.getByTestId("home-score")).toHaveText("1");
+  await saved();
+  await page.getByRole("button", { name: "New match", exact: true }).click();
+  await page.getByLabel("Match name", { exact: true }).fill("Second match");
+  await page.getByRole("button", { name: "Create match", exact: true }).click();
+  await page.getByRole("button", { name: "My matches", exact: true }).click();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: /Home vs Away/ })
+    .click();
+  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  await expect(page.getByTestId("home-score")).toHaveText("0");
+  await expect(page.locator(".scoreboard [role=status]")).toHaveText(
+    "Home attacking",
+  );
+  await expect(
+    phase.getByRole("button", { name: "Counterattack", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(
+    defense.getByRole("button", { name: "5:1", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await saved();
+  await page.reload();
+  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  await expect(
+    defense.getByRole("button", { name: "6:0", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await saved();
+  await page.reload();
+  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  await expect(
+    phase.getByRole("button", { name: "Static", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(
+    page.getByRole("button", { name: "Undo", exact: true }),
+  ).toBeDisabled();
+  await saved();
+  await page.reload();
+  await expect(
+    page.getByRole("button", { name: "Undo", exact: true }),
+  ).toBeDisabled();
+});
+
+test("all dialogs dismiss on backdrop clicks, but inside clicks preserve drafts", async ({
+  page,
+}) => {
+  const triggers = [
+    "New match",
+    "My matches",
+    "Export data",
+    /Technical fault Choose a fault/,
+    "Cards & suspensions",
+    "Adjust clock",
+    "Next period",
+  ];
+  for (const name of triggers) {
+    await page
+      .getByRole("button", { name, exact: typeof name === "string" })
+      .click();
+    const modal = page.getByRole("dialog");
+    await expect(modal).toBeVisible();
+    const bounds = (await modal.boundingBox())!;
+    await page.mouse.click(bounds.x + 10, bounds.y + 10);
+    await expect(modal).toBeVisible();
+    if (name === "Adjust clock")
+      await page
+        .getByRole("button", {
+          name: "Increase Minutes · Digit 1",
+          exact: true,
+        })
+        .click();
+    await page.mouse.click(2, 2);
+    await expect(modal).toHaveCount(0);
+  }
+  await expect(
+    page.getByRole("button", { name: "Adjust clock", exact: true }),
+  ).toHaveText("00:00");
+  await expect(page.locator(".period-label")).toContainText("Period 1");
+  await page.getByRole("button", { name: /Goal Add a goal/ }).click();
+  await page
+    .getByRole("button", { name: "Edit event note", exact: true })
+    .click();
+  await page.getByLabel("Notes (optional)").fill("Unsaved draft");
+  await page.mouse.click(2, 2);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByText("Unsaved draft")).toHaveCount(0);
 });

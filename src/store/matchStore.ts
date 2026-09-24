@@ -1,5 +1,15 @@
+import {
+  historyEntry,
+  restoreHistory,
+  undoLastEvent,
+  type HistoryEntry,
+} from "../lib/matchHistory";
 import { create } from "zustand";
-import { loadActiveMatch, saveMatch } from "../lib/browserStorage";
+import {
+  loadActiveMatch,
+  loadMatchHistory,
+  saveMatch,
+} from "../lib/browserStorage";
 import {
   gameSeconds,
   logEvent,
@@ -17,14 +27,13 @@ import {
 } from "../types/match";
 
 type SaveStatus = "loading" | "saving" | "saved" | "error";
-type HistoryEntry = { match: MatchSession; restoreClock: boolean };
 interface MatchStore {
   match: MatchSession;
   history: HistoryEntry[];
   ready: boolean;
   saveStatus: SaveStatus;
   initialize: () => Promise<void>;
-  replace: (match: MatchSession) => void;
+  replace: (match: MatchSession, history?: HistoryEntry[]) => void;
   log: (
     event: EventType,
     details?: Pick<MatchEvent, "subType" | "sanctionTeamId" | "notes">,
@@ -43,10 +52,11 @@ let saves: Promise<void> = Promise.resolve();
 let revision = 0;
 export const flushSaves = () => saves;
 function persist(match: MatchSession) {
+  const history = useMatchStore.getState().history;
   const current = ++revision;
   useMatchStore.setState({ saveStatus: "saving" });
   saves = saves
-    .then(() => saveMatch(match))
+    .then(() => saveMatch(match, history))
     .then(() => {
       if (current === revision) useMatchStore.setState({ saveStatus: "saved" });
     })
@@ -54,7 +64,12 @@ function persist(match: MatchSession) {
       if (current === revision) useMatchStore.setState({ saveStatus: "error" });
     });
 }
-function change(match: MatchSession, remember = true, restoreClock = false) {
+function change(
+  match: MatchSession,
+  remember = true,
+  restoreClock = false,
+  editedEvent?: MatchEvent,
+) {
   const state = useMatchStore.getState();
   if (!state.ready) return;
   useMatchStore.setState({
@@ -62,10 +77,7 @@ function change(match: MatchSession, remember = true, restoreClock = false) {
     history: remember
       ? [
           ...state.history.slice(-49),
-          {
-            match: restoreClock ? stopClock(state.match) : state.match,
-            restoreClock,
-          },
+          historyEntry(state.match, restoreClock, editedEvent),
         ]
       : state.history,
   });
@@ -82,14 +94,15 @@ export const useMatchStore = create<MatchStore>((set, get) => ({
       try {
         const loaded = await loadActiveMatch();
         const match = loaded ? matchSchema.parse(loaded) : get().match;
-        set({ match, ready: true, saveStatus: "saved" });
+        const history = loaded ? await loadMatchHistory(match) : [];
+        set({ match, history, ready: true, saveStatus: "saved" });
         if (!loaded) persist(match);
       } catch {
         set({ ready: true, saveStatus: "error" });
       }
     })()),
-  replace: (match) => {
-    set({ match, history: [] });
+  replace: (match, history = []) => {
+    set({ match, history });
     persist(match);
   },
   log: (event, details) => change(logEvent(get().match, event, details)),
@@ -106,25 +119,27 @@ export const useMatchStore = create<MatchStore>((set, get) => ({
     if (match[key].currentDefense !== currentDefense)
       change({ ...match, [key]: { ...match[key], currentDefense } });
   },
-  editNote: (id, notes) =>
-    change({
-      ...get().match,
-      events: get().match.events.map((e) =>
-        e.id === id ? { ...e, notes: notes.slice(0, 2000) } : e,
-      ),
-    }),
+  editNote: (id, notes) => {
+    const previous = get().match.events.find((event) => event.id === id);
+    if (!previous || previous.notes === notes.slice(0, 2000)) return;
+    change(
+      {
+        ...get().match,
+        events: get().match.events.map((event) =>
+          event.id === id ? { ...event, notes: notes.slice(0, 2000) } : event,
+        ),
+      },
+      true,
+      false,
+      previous,
+    );
+  },
   switchPossession: () => get().log("POSSESSION_SWITCH"),
   undo: () => {
     const { history, match: current } = get();
     const last = history.at(-1);
-    if (!last) return;
-    const match = last.restoreClock
-      ? stopClock(last.match)
-      : {
-          ...last.match,
-          gameTimeSeconds: current.gameTimeSeconds,
-          clockStartedAt: current.clockStartedAt,
-        };
+    if (!last && !current.events.length) return;
+    const match = last ? restoreHistory(current, last) : undoLastEvent(current);
     set({ match, history: history.slice(0, -1) });
     persist(match);
   },

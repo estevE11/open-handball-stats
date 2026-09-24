@@ -24,6 +24,7 @@ Browser tests use installed Google Chrome locally. For Chromium, run `npx playwr
 
 - The header theme button switches between light and dark appearances. The initial theme uses the device preference; explicit choices persist on this browser. All tagging controls and dialogs support both themes.
 - The larger lower action row contains 7m, sanctions, and manual possession switching. Only Technical fault and Sanctions show a top-right arrow to indicate a dialog.
+- Dialogs close when tapping the backdrop or pressing Escape. Unsaved edits are discarded when dismissed.
 - Header language toggle switches all interface terminology instantly and remembers EN/ES on this browser. Team names are user data and are not translated.
 - The scoreboard glows in the current attacking team’s color and follows automatic flips, manual switches, and undo.
 - Start/pause or adjust the cumulative match clock using independent digit inputs with up/down buttons and keyboard arrow support. Its persisted wall-clock anchor avoids drift when the page is throttled or refreshed. The clock continues while the app is closed until you pause it. Moving to the next period pauses the clock without resetting elapsed match time; the clock remains paused after undoing a period change.
@@ -33,7 +34,7 @@ Browser tests use installed Google Chrome locally. For Chromium, run `npx playwr
 - **Possession regained** keeps the _currently displayed attacker_. To correct a preceding shot's auto-flip, undo that shot first or use Switch possession; the rebound action never silently reverses the preceding event.
 - Tactical selectors use sliding selection highlights, with reduced-motion preferences respected.
 - Each team's last defense is independent: 6:0, 5:1, 4:2, 3:2:1, 3:3, Individual, or Other / 5+1. Switching possession restores the new defender's saved formation.
-- **Undo** restores the last event, tactical selection, clock adjustment, period change, or note edit. It restores score and possession together without rewinding a running clock for ordinary tags. The last 50 changes are retained in memory; reload and match switching clear undo history.
+- **Undo** restores the last event, tactical selection, clock adjustment, period change, or note edit. It restores score and possession together without rewinding a running clock for ordinary tags. The last 50 changes are saved per match as a compact action journal, so undo survives reloads and reopening a match. Older or imported matches without a journal (and events preceding the retained journal) support last-event undo using the recorded possession and tactical context; this fallback keeps the current clock and period.
 - **Switch possession** logs an explicit override. The event stream includes matching action icons, a pale team-colored edge (the sanctioned team for sanctions, the attacking team for other events), and comment buttons for note edits. My matches keeps previous sessions; creating or importing a match never deletes earlier ones. Opening another match pauses the current clock.
 
 ## Portable data
@@ -79,6 +80,7 @@ src/
     en.json              English terminology
     es.json              Spanish terminology
   lib/
+    matchHistory.ts      Compact undo journal and last-event fallback
     matchEngine.ts       Pure possession transitions, scoring, clock
     browserStorage.ts    Dexie database and atomic active-match saves
     exportService.ts     CSV, JSON, Sportscode XML, validated import
@@ -99,7 +101,7 @@ React 19, TypeScript, Vite, Tailwind CSS, Lucide, Zustand, and Dexie follow the 
 
 ## Storage and offline use
 
-Dexie database `ohm.library.v1` has `matches` and `settings` tables. Each save updates the match and active-match pointer in one transaction. Saves are serialized so rapid actions cannot overwrite newer state with older writes. A failed save keeps the in-memory match and exposes Retry and JSON export. The UI reports loading, saving, saved, and error states; pending/failed saves guard page exit. Use one editing tab per browser profile: cross-tab conflict resolution is not implemented.
+Dexie database `ohm.library.v1` has `matches` and `settings` tables. Each save updates the match, its undo journal, and active-match pointer in one transaction. Undo journals use `undo:<match-id>` keys in the existing settings table, so existing databases need no schema migration. Saves are serialized so rapid actions cannot overwrite newer state with older writes. A failed save keeps the in-memory match and exposes Retry and JSON export. The UI reports loading, saving, saved, and error states; pending/failed saves guard page exit. Use one editing tab per browser profile: cross-tab conflict resolution is not implemented.
 
 Browser storage belongs to the site's origin, device, and browser profile. Clearing it removes matches. Export JSON backups regularly. The footer storage button requests persistence; the browser may decline. Private browsing storage can be temporary.
 

@@ -1,7 +1,12 @@
 import "fake-indexeddb/auto";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { db, loadActiveMatch } from "../lib/browserStorage";
-import { newMatch, score } from "../lib/matchEngine";
+import {
+  db,
+  loadActiveMatch,
+  loadMatchHistory,
+  saveMatch,
+} from "../lib/browserStorage";
+import { newMatch, score, logEvent } from "../lib/matchEngine";
 import { flushSaves, useMatchStore } from "./matchStore";
 const state = () => useMatchStore.getState();
 beforeEach(async () => {
@@ -82,5 +87,102 @@ describe("store and IndexedDB", () => {
     await flushSaves();
     expect((await db.matches.get(id))?.events).toHaveLength(1);
     expect(await db.matches.count()).toBe(2);
+  });
+});
+
+describe("persistent undo", () => {
+  it("restores saved actions, notes and tactics without copying the event list", async () => {
+    state().setPhase("COUNTERATTACK");
+    state().setDefense("5:1");
+    state().log("GOAL");
+    const id = state().match.events[0].id;
+    state().editNote(id, "first");
+    state().editNote(id, "second");
+    await flushSaves();
+    const saved = (await loadActiveMatch())!;
+    const history = await loadMatchHistory(saved);
+    expect(history).toHaveLength(5);
+    expect(history.every((entry) => !("events" in entry.before))).toBe(true);
+    state().replace(saved, history);
+    state().undo();
+    expect(state().match.events[0].notes).toBe("first");
+    state().undo();
+    expect(state().match.events[0].notes).toBeUndefined();
+    state().undo();
+    expect(score(state().match, "home")).toBe(0);
+    expect(state().match).toMatchObject({
+      currentAttackingTeamId: "home",
+      currentPossessionIndex: 1,
+      attackPhase: "COUNTERATTACK",
+    });
+    expect(state().match.awayTeam.currentDefense).toBe("5:1");
+    await flushSaves();
+    expect(await loadMatchHistory(state().match)).toHaveLength(2);
+  });
+  it("keeps saved match and undo history atomic on a journal-write failure", async () => {
+    state().log("GOAL");
+    await flushSaves();
+    const prior = (await loadActiveMatch())!;
+    const put = vi
+      .spyOn(db.settings, "put")
+      .mockRejectedValueOnce(new Error("QuotaExceededError"));
+    state().log("STEAL");
+    await flushSaves();
+    expect(state().saveStatus).toBe("error");
+    expect(await loadActiveMatch()).toEqual(prior);
+    expect(await loadMatchHistory(prior)).toHaveLength(1);
+    put.mockRestore();
+    state().retry();
+    await flushSaves();
+    expect(await loadMatchHistory(state().match)).toHaveLength(2);
+  });
+  it.each([
+    "GOAL",
+    "REBOUND_REGAINED",
+    "SANCTION",
+    "POSSESSION_SWITCH",
+  ] as const)(
+    "removes a legacy %s event when no history exists",
+    async (type) => {
+      const original = { ...newMatch(), attackPhase: "COUNTERATTACK" as const };
+      original.awayTeam.currentDefense = "4:2";
+      const match = logEvent(
+        original,
+        type,
+        type === "SANCTION"
+          ? { subType: "YELLOW", sanctionTeamId: "away" }
+          : {},
+      );
+      await saveMatch(match);
+      state().replace(match, await loadMatchHistory(match));
+      state().undo();
+      expect(state().match).toEqual(original);
+      await flushSaves();
+      expect((await loadActiveMatch())?.events).toHaveLength(0);
+    },
+  );
+  it("rejects malformed or foreign history while keeping the match usable", async () => {
+    state().log("GOAL");
+    await flushSaves();
+    const key = `undo:${state().match.id}`;
+    await db.settings.put({ key, value: "broken json" });
+    expect(await loadMatchHistory(state().match)).toEqual([]);
+    const foreign = {
+      ...state().history[0],
+      before: { ...state().history[0].before, id: "another-match" },
+    };
+    await db.settings.put({ key, value: JSON.stringify([foreign]) });
+    expect(await loadMatchHistory(state().match)).toEqual([]);
+  });
+  it("caps the journal at 50 actions and preserves each match separately", async () => {
+    for (let i = 0; i < 55; i++) state().log("GOAL");
+    await flushSaves();
+    const first = state().match;
+    expect(await loadMatchHistory(first)).toHaveLength(50);
+    state().replace(newMatch("A", "B"));
+    state().setDefense("3:3");
+    await flushSaves();
+    expect(await loadMatchHistory(state().match)).toHaveLength(1);
+    expect(await loadMatchHistory(first)).toHaveLength(50);
   });
 });
