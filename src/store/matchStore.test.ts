@@ -91,6 +91,30 @@ describe("store and IndexedDB", () => {
 });
 
 describe("persistent undo", () => {
+  it.each(["REBOUND_REGAINED", "SHOT_BLOCKED"] as const)(
+    "loads legacy %s events and their undo journal without rewriting them",
+    async (type) => {
+      const original = newMatch();
+      const legacy = {
+        ...original,
+        events: [
+          { ...logEvent(original, type).events[0], isPossessionFlipped: false },
+        ],
+      };
+      state().replace(legacy);
+      state().setPhase("COUNTERATTACK");
+      await flushSaves();
+      const saved = (await loadActiveMatch())!;
+      expect(saved.events[0].isPossessionFlipped).toBe(false);
+      const history = await loadMatchHistory(saved);
+      expect(history).toHaveLength(1);
+      state().replace(saved, history);
+      state().undo();
+      expect(state().match).toEqual(legacy);
+      state().undo();
+      expect(state().match).toEqual(original);
+    },
+  );
   it("restores saved actions, notes and tactics without copying the event list", async () => {
     state().setPhase("COUNTERATTACK");
     state().setDefense("5:1");

@@ -57,6 +57,8 @@ export function logEvent(
     "GOAL",
     "GK_SAVE",
     "SHOT_OUT",
+    "SHOT_BLOCKED",
+    "REBOUND_REGAINED",
     "STEAL",
     "TECHNICAL_FAULT",
     "POSSESSION_SWITCH",

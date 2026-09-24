@@ -96,7 +96,7 @@
   "libraryHelp": "Matches saved in this browser. Opening another match pauses this clock.",
   "newHelp": "Your current match stays in My matches.",
   "sanctionHelp": "Log a sanction without changing possession.",
-  "reboundNote": "Rebound keeps the current attacker. To correct an earlier auto-flip, undo that event first or switch possession.",
+  "reboundNote": "Switch possession back when the shooting team recovers the ball after a save, defensive block, or shot off the post.",
   "editEvent": "Edit event note",
   "saveNote": "Save note",
   "ecosystem": "PART OF OPEN HANDBALL",

@@ -96,7 +96,7 @@
   "libraryHelp": "Partidos guardados en este navegador. Abrir otro partido pausa este reloj.",
   "newHelp": "El partido actual se conserva en Mis partidos.",
   "sanctionHelp": "Registra una sanción sin cambiar la posesión.",
-  "reboundNote": "El rechace mantiene al atacante actual. Para corregir un cambio automático anterior, deshaz esa acción o cambia la posesión.",
+  "reboundNote": "Devuelve la posesión al equipo que lanzó cuando recupera el balón tras una parada, un bloqueo defensivo o un tiro al poste.",
   "editEvent": "Editar nota de la acción",
   "saveNote": "Guardar nota",
   "ecosystem": "PARTE DE OPEN HANDBALL",

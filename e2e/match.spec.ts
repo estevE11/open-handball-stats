@@ -62,7 +62,7 @@ test("tablet tagging preserves team tactics, score, undo, sanctions and reload",
     .getByRole("button", { name: "2-minute suspension", exact: true })
     .click();
   await expect(page.locator(".scoreboard [role=status]")).toHaveText(
-    "Home attacking",
+    "Away attacking",
   );
   await expect(
     page.getByRole("list", { name: "Live event stream" }).getByRole("listitem"),
@@ -76,7 +76,7 @@ test("tablet tagging preserves team tactics, score, undo, sanctions and reload",
     page.getByRole("list", { name: "Live event stream" }).getByRole("listitem"),
   ).toHaveCount(5);
   await expect(
-    defense.getByRole("button", { name: "5:1", exact: true }),
+    defense.getByRole("button", { name: "3:2:1", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
 });
 
@@ -625,7 +625,7 @@ test("all dialogs dismiss on backdrop clicks, but inside clicks preserve drafts"
   await expect(page.getByText("Unsaved draft")).toHaveCount(0);
 });
 
-test("blocked shot sits in the center and retains possession through reload and undo", async ({
+test("blocked shot sits in the center and flips possession through reload and undo", async ({
   page,
 }, testInfo) => {
   await page.setViewportSize({ width: 1024, height: 820 });
@@ -644,13 +644,15 @@ test("blocked shot sits in the center and retains possession through reload and 
   await phase
     .getByRole("button", { name: "Counterattack", exact: true })
     .click();
-  await page.getByRole("button", { name: /Shot blocked Keep current/ }).click();
+  await page
+    .getByRole("button", { name: /Shot blocked Switch possession/ })
+    .click();
   await expect(page.locator(".scoreboard [role=status]")).toHaveText(
-    "Home attacking",
+    "Away attacking",
   );
   await expect(page.getByTestId("home-score")).toHaveText("0");
   await expect(
-    phase.getByRole("button", { name: "Counterattack", exact: true }),
+    phase.getByRole("button", { name: "Static", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
   await expect(page.locator(".event-list li").first()).toContainText(
     "Shot blocked",
@@ -673,3 +675,43 @@ test("blocked shot sits in the center and retains possession through reload and 
     page.getByRole("button", { name: /Lanzamiento bloqueado/ }),
   ).toBeVisible();
 });
+
+for (const shot of ["Keeper save", "Shot blocked", "Off-target / post"]) {
+  test(`${shot} then regained possession returns the attacker and supports undo after reload`, async ({
+    page,
+  }) => {
+    await page
+      .getByRole("button", { name: new RegExp(`${shot} Switch possession`) })
+      .click();
+    await expect(page.locator(".scoreboard [role=status]")).toHaveText(
+      "Away attacking",
+    );
+    await page
+      .getByRole("button", { name: "Possession regained", exact: true })
+      .click();
+    await expect(page.locator(".scoreboard [role=status]")).toHaveText(
+      "Home attacking",
+    );
+    await expect(page.locator(".event-list li")).toHaveCount(2);
+    await expect(page.getByTestId("home-score")).toHaveText("0");
+    await expect(page.getByTestId("away-score")).toHaveText("0");
+    await expect(
+      page.getByText("Saved on this device", { exact: true }),
+    ).toBeVisible();
+    await page.reload();
+    await expect(page.locator(".scoreboard [role=status]")).toHaveText(
+      "Home attacking",
+    );
+    await page.getByRole("button", { name: "Undo", exact: true }).click();
+    await expect(page.locator(".scoreboard [role=status]")).toHaveText(
+      "Away attacking",
+    );
+    await expect(page.locator(".event-list li")).toHaveCount(1);
+    await expect(page.locator(".event-list li")).toContainText(shot);
+    await page.getByRole("button", { name: "Undo", exact: true }).click();
+    await expect(page.locator(".scoreboard [role=status]")).toHaveText(
+      "Home attacking",
+    );
+    await expect(page.locator(".event-list li")).toHaveCount(0);
+  });
+}

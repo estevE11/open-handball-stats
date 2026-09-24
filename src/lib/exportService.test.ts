@@ -10,13 +10,35 @@ describe("portable exports", () => {
     const restored = importJSON(exportJSON(match));
     expect(restored.events[0]).toMatchObject({
       eventType: "SHOT_BLOCKED",
-      isPossessionFlipped: false,
+      isPossessionFlipped: true,
       attackPhase: "COUNTERATTACK",
     });
-    expect(restored.currentAttackingTeamId).toBe("home");
+    expect(restored.currentAttackingTeamId).toBe("away");
     expect(exportCSV(match)).toContain('"SHOT_BLOCKED"');
     expect(exportXML(match)).toContain("<text>SHOT_BLOCKED</text>");
   });
+  it.each(["REBOUND_REGAINED", "SHOT_BLOCKED"] as const)(
+    "round-trips new and legacy %s possession behavior",
+    (type) => {
+      const original = newMatch();
+      const next = logEvent(original, type);
+      const restored = importJSON(exportJSON(next));
+      expect(restored.events[0].isPossessionFlipped).toBe(true);
+      expect(restored.currentAttackingTeamId).toBe("away");
+      expect(exportCSV(next)).toContain(`"${type}","","true"`);
+      expect(exportXML(next)).toContain(
+        "<group>is_possession_flipped</group><text>true</text>",
+      );
+      const legacy = {
+        ...original,
+        events: [{ ...next.events[0], isPossessionFlipped: false }],
+      };
+      const imported = importJSON(exportJSON(legacy));
+      expect(imported.events[0].isPossessionFlipped).toBe(false);
+      expect(imported.currentAttackingTeamId).toBe("home");
+      expect(imported.currentPossessionIndex).toBe(1);
+    },
+  );
   it("round-trips complete match tactics with fresh identifiers", () => {
     const match = logEvent(
       {
@@ -64,7 +86,7 @@ describe("portable exports", () => {
     expect(() => importJSON(JSON.stringify(match))).toThrow();
   });
   it("rejects a retention event that claims to flip possession", () => {
-    const match = logEvent(newMatch(), "REBOUND_REGAINED");
+    const match = logEvent(newMatch(), "PENALTY_7M");
     match.events[0].isPossessionFlipped = true;
     expect(() => importJSON(JSON.stringify(match))).toThrow();
   });

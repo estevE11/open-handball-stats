@@ -33,14 +33,14 @@ export function TaggingPanel({
     { type: "GK_SAVE", help: "flipHelp" },
     { type: "SHOT_OUT", help: "flipHelp" },
     { type: "STEAL", help: "flipHelp" },
-    { type: "SHOT_BLOCKED", help: "retainHelp" },
+    { type: "SHOT_BLOCKED", help: "flipHelp" },
     { type: "TECHNICAL_FAULT", help: "faultHelp" },
   ].map((action) => ({
     ...action,
     ...eventAppearance[action.type as EventType],
   })) as {
     type: EventType;
-    help: "goalHelp" | "flipHelp" | "faultHelp" | "retainHelp";
+    help: "goalHelp" | "flipHelp" | "faultHelp";
     icon: typeof Shield;
     className: string;
   }[];
@@ -90,9 +90,7 @@ export function TaggingPanel({
                   aria-hidden="true"
                 />
               ) : (
-                <span>
-                  {type === "GOAL" ? "+1" : type === "SHOT_BLOCKED" ? "↳" : "↔"}
-                </span>
+                <span>{type === "GOAL" ? "+1" : "↔"}</span>
               )}
             </div>
             <strong>{t(type)}</strong>

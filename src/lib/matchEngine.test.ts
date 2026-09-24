@@ -11,6 +11,8 @@ describe("possession engine", () => {
     "GOAL",
     "GK_SAVE",
     "SHOT_OUT",
+    "SHOT_BLOCKED",
+    "REBOUND_REGAINED",
     "STEAL",
     "TECHNICAL_FAULT",
     "POSSESSION_SWITCH",
@@ -37,19 +39,41 @@ describe("possession engine", () => {
     expect(score(next, "home")).toBe(type === "GOAL" ? 1 : 0);
     expect(match.events).toHaveLength(0);
   });
-  it.each([
-    "REBOUND_REGAINED",
-    "SHOT_BLOCKED",
-    "PENALTY_7M",
-    "SANCTION",
-  ] as const)("%s retains possession and phase", (type) => {
-    const match = { ...newMatch(), attackPhase: "COUNTERATTACK" as const };
-    const next = logEvent(match, type);
-    expect(next.currentAttackingTeamId).toBe("home");
-    expect(next.currentPossessionIndex).toBe(1);
-    expect(next.attackPhase).toBe("COUNTERATTACK");
-    expect(next.events[0].isPossessionFlipped).toBe(false);
-  });
+  it.each(["PENALTY_7M", "SANCTION"] as const)(
+    "%s retains possession and phase",
+    (type) => {
+      const match = { ...newMatch(), attackPhase: "COUNTERATTACK" as const };
+      const next = logEvent(match, type);
+      expect(next.currentAttackingTeamId).toBe("home");
+      expect(next.currentPossessionIndex).toBe(1);
+      expect(next.attackPhase).toBe("COUNTERATTACK");
+      expect(next.events[0].isPossessionFlipped).toBe(false);
+    },
+  );
+  it.each(["GK_SAVE", "SHOT_BLOCKED", "SHOT_OUT"] as const)(
+    "%s followed by a rebound returns possession without removing the shot",
+    (type) => {
+      const match = newMatch();
+      match.homeTeam.currentDefense = "3:2:1";
+      match.awayTeam.currentDefense = "5:1";
+      const shot = logEvent(match, type);
+      const regained = logEvent(shot, "REBOUND_REGAINED");
+      expect(shot.currentAttackingTeamId).toBe("away");
+      expect(regained.currentAttackingTeamId).toBe("home");
+      expect(regained.currentPossessionIndex).toBe(3);
+      expect(regained.events.map((event) => event.eventType)).toEqual([
+        type,
+        "REBOUND_REGAINED",
+      ]);
+      expect(regained.events.map((event) => event.defenseSystem)).toEqual([
+        "5:1",
+        "3:2:1",
+      ]);
+      expect(regained.awayTeam.currentDefense).toBe("5:1");
+      expect(score(regained, "home")).toBe(0);
+      expect(score(regained, "away")).toBe(0);
+    },
+  );
   it("restores each team defense through repeated flips", () => {
     const match = newMatch();
     match.homeTeam.currentDefense = "3:2:1";

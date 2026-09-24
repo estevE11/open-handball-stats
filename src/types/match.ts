@@ -122,11 +122,18 @@ export const matchSchema = z
         "GOAL",
         "GK_SAVE",
         "SHOT_OUT",
+        "SHOT_BLOCKED",
+        "REBOUND_REGAINED",
         "STEAL",
         "TECHNICAL_FAULT",
         "POSSESSION_SWITCH",
       ].includes(event.eventType);
-      if (event.isPossessionFlipped !== flips)
+      // Older matches logged rebounds and blocks without flipping. Preserve their
+      // recorded behavior when loading matches, imports, and undo journals.
+      if (
+        !["REBOUND_REGAINED", "SHOT_BLOCKED"].includes(event.eventType) &&
+        event.isPossessionFlipped !== flips
+      )
         bad("Invalid possession behavior.");
       if (
         event.eventType === "TECHNICAL_FAULT" &&
