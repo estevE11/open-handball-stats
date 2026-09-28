@@ -7,7 +7,9 @@ test.beforeEach(async ({ page }) => {
     page.getByRole("button", { name: "New match", exact: true }),
   ).toBeEnabled();
   await expect(
-    page.getByText("Saved on this device", { exact: true }),
+    page
+      .getByText("Saved on this device", { exact: true })
+      .filter({ visible: true }),
   ).toBeVisible();
 });
 
@@ -68,7 +70,9 @@ test("tablet tagging preserves team tactics, score, undo, sanctions and reload",
     page.getByRole("list", { name: "Live event stream" }).getByRole("listitem"),
   ).toHaveCount(5);
   await expect(
-    page.getByText("Saved on this device", { exact: true }),
+    page
+      .getByText("Saved on this device", { exact: true })
+      .filter({ visible: true }),
   ).toBeVisible();
   await page.reload();
   await expect(page.getByTestId("home-score")).toHaveText("1");
@@ -113,7 +117,9 @@ test("JSON import/export, invalid import isolation, CSV and XML downloads", asyn
   await page.getByLabel("Import JSON", { exact: true }).setInputFiles(path!);
   await expect(page.getByTestId("home-score")).toHaveText("1");
   await expect(
-    page.getByText("Saved on this device", { exact: true }),
+    page
+      .getByText("Saved on this device", { exact: true })
+      .filter({ visible: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "My matches", exact: true }).click();
   await expect(page.locator(".match-row")).toHaveCount(2);
@@ -133,7 +139,9 @@ test("JSON import/export, invalid import isolation, CSV and XML downloads", asyn
     "Home attacking",
   );
   await expect(
-    page.getByText("Saved on this device", { exact: true }),
+    page
+      .getByText("Saved on this device", { exact: true })
+      .filter({ visible: true }),
   ).toBeVisible();
   await page.reload();
   await expect(page.getByTestId("home-score")).toHaveText("0");
@@ -220,7 +228,9 @@ test("production PWA reloads and saves new events offline", async ({
     .toBe(true);
   await page.getByRole("button", { name: /Goal Add a goal/ }).click();
   await expect(
-    page.getByText("Saved on this device", { exact: true }),
+    page
+      .getByText("Saved on this device", { exact: true })
+      .filter({ visible: true }),
   ).toBeVisible();
   await context.setOffline(true);
   await page.reload();
@@ -228,7 +238,9 @@ test("production PWA reloads and saves new events offline", async ({
   await page.getByRole("button", { name: /Goal Add a goal/ }).click();
   await expect(page.getByTestId("away-score")).toHaveText("1");
   await expect(
-    page.getByText("Saved on this device", { exact: true }),
+    page
+      .getByText("Saved on this device", { exact: true })
+      .filter({ visible: true }),
   ).toBeVisible();
   await page.reload();
   await expect(page.getByTestId("away-score")).toHaveText("1");
@@ -244,7 +256,18 @@ for (const [width, height] of [
   test(`responsive EN/ES layout ${width}`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width, height });
     for (const language of ["EN", "ES"]) {
+      if (width < 768)
+        await page
+          .getByRole("button", { name: /Open menu|Abrir menú/ })
+          .click();
       await page.getByRole("button", { name: language, exact: true }).click();
+      if (width < 768) {
+        await page
+          .getByRole("dialog")
+          .getByRole("button", { name: /Close|Cerrar/ })
+          .click();
+        await expect(page.getByRole("dialog")).toHaveCount(0);
+      }
       expect(
         await page.evaluate(
           () => document.documentElement.scrollWidth <= innerWidth,
@@ -281,7 +304,9 @@ test("blank team names cannot create an unrecoverable match", async ({
     page.getByRole("heading", { name: "Home vs Away" }),
   ).toBeVisible();
   await expect(
-    page.getByText("Saved on this device", { exact: true }),
+    page
+      .getByText("Saved on this device", { exact: true })
+      .filter({ visible: true }),
   ).toBeVisible();
 });
 
@@ -475,7 +500,9 @@ test("larger auxiliary controls, modal markers and saved dark mode", async ({
   });
   await page.getByRole("button", { name: "Close", exact: true }).click();
   await expect(
-    page.getByText("Saved on this device", { exact: true }),
+    page
+      .getByText("Saved on this device", { exact: true })
+      .filter({ visible: true }),
   ).toBeVisible();
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
@@ -513,7 +540,9 @@ test("undo survives reloads and reopening a match with exact action history", as
 }) => {
   const saved = () =>
     expect(
-      page.getByText("Saved on this device", { exact: true }),
+      page
+        .getByText("Saved on this device", { exact: true })
+        .filter({ visible: true }),
     ).toBeVisible();
   const phase = page.getByRole("group", { name: "Attack phase", exact: true });
   const defense = page.getByRole("group", {
@@ -658,7 +687,9 @@ test("blocked shot sits in the center and flips possession through reload and un
     "Shot blocked",
   );
   await expect(
-    page.getByText("Saved on this device", { exact: true }),
+    page
+      .getByText("Saved on this device", { exact: true })
+      .filter({ visible: true }),
   ).toBeVisible();
   await page.reload();
   await expect(page.locator(".event-list li").first()).toContainText(
@@ -696,7 +727,9 @@ for (const shot of ["Keeper save", "Shot blocked", "Off-target / post"]) {
     await expect(page.getByTestId("home-score")).toHaveText("0");
     await expect(page.getByTestId("away-score")).toHaveText("0");
     await expect(
-      page.getByText("Saved on this device", { exact: true }),
+      page
+        .getByText("Saved on this device", { exact: true })
+        .filter({ visible: true }),
     ).toBeVisible();
     await page.reload();
     await expect(page.locator(".scoreboard [role=status]")).toHaveText(
@@ -715,3 +748,109 @@ for (const shot of ["Keeper save", "Shot blocked", "Off-target / post"]) {
     await expect(page.locator(".event-list li")).toHaveCount(0);
   });
 }
+
+for (const [width, height] of [
+  [320, 568],
+  [390, 664],
+  [430, 932],
+]) {
+  test(`mobile board fits first view at ${width} in both languages`, async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize({ width, height });
+    for (const language of ["EN", "ES"]) {
+      await page.getByRole("button", { name: /Open menu|Abrir menú/ }).click();
+      await page.getByRole("button", { name: language, exact: true }).click();
+      await page
+        .getByRole("dialog")
+        .getByRole("button", { name: /Close|Cerrar/ })
+        .click();
+      await expect(page.getByRole("dialog")).toHaveCount(0);
+      await expect(page.locator(".topbar")).toBeHidden();
+      await expect(page.locator(".editor-layout > .event-stream")).toBeHidden();
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+      for (const selector of [
+        ".scoreboard",
+        ".action",
+        ".aux-action",
+        ".phase",
+        ".defense",
+        ".undo",
+      ]) {
+        for (const element of await page.locator(selector).all()) {
+          const bounds = (await element.boundingBox())!;
+          expect(bounds.y).toBeGreaterThanOrEqual(0);
+          expect(bounds.y + bounds.height).toBeLessThanOrEqual(height);
+        }
+      }
+      await page.screenshot({
+        path: testInfo.outputPath(`mobile-${width}-${language}.png`),
+      });
+    }
+  });
+}
+
+test("mobile drawer, event modal, notes, theme and match controls", async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 664 });
+  await page.getByRole("button", { name: "Open menu" }).click();
+  const menu = page.getByRole("dialog", { name: "Match menu", exact: true });
+  await expect(menu).toBeVisible();
+  await menu.getByRole("button", { name: "Switch to dark mode" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await page.screenshot({
+    path: testInfo.outputPath("mobile-drawer-dark.png"),
+  });
+  await page.mouse.click(385, 400);
+  await expect(menu).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Open menu" })).toBeFocused();
+  await page.getByRole("button", { name: "Open menu" }).click();
+  await menu.getByRole("button", { name: "New match", exact: true }).click();
+  await expect(menu).toHaveCount(0);
+  await page.locator("input[name=home]").fill("Granollers");
+  await page.locator("input[name=away]").fill("Barcelona");
+  await page.getByRole("button", { name: "Create match", exact: true }).click();
+  await page.locator(".action.goal").click();
+  await expect(page.getByTestId("home-score")).toHaveText("1");
+  await page
+    .getByRole("button", { name: "Live event stream", exact: true })
+    .click();
+  const events = page.getByRole("dialog", {
+    name: "Live event stream",
+    exact: true,
+  });
+  await expect(events.getByRole("listitem")).toHaveCount(1);
+  await events.getByRole("button", { name: "Edit event note" }).click();
+  await page.getByLabel("Notes (optional)").fill("Mobile note");
+  await page.getByRole("button", { name: "Save note" }).click();
+  await expect(events.getByText("Mobile note")).toBeVisible();
+  await page.screenshot({
+    path: testInfo.outputPath("mobile-events-dark.png"),
+  });
+  await page.keyboard.press("Escape");
+  await expect(events).toHaveCount(0);
+  await page.getByRole("button", { name: "Start clock", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Pause clock", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Pause clock", exact: true }).click();
+  await page.screenshot({ path: testInfo.outputPath("mobile-board-dark.png") });
+  await page.getByRole("button", { name: "Open menu" }).click();
+  await menu.getByRole("button", { name: "Export data", exact: true }).click();
+  await expect(menu).toHaveCount(0);
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: /^JSON/ }).click();
+  const exported = await download;
+  expect(exported.suggestedFilename()).toMatch(/\.json$/);
+  await page.getByRole("button", { name: "Close", exact: true }).click();
+  await page.getByRole("button", { name: "Open menu" }).click();
+  await page.setViewportSize({ width: 1024, height: 820 });
+  await expect(menu).toHaveCount(0);
+  await expect(page.locator(".topbar")).toBeVisible();
+  await expect(page.locator(".editor-layout > .event-stream")).toBeVisible();
+});

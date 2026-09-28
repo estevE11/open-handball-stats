@@ -1,4 +1,6 @@
 {
+  "menu": "Menú del partido",
+  "openMenu": "Abrir menú",
   "appName": "Open Handball Stats",
   "tagline": "Registro en directo. Datos abiertos.",
   "liveWorkspace": "ÁREA DE PARTIDO",

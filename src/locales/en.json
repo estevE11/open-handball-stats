@@ -1,4 +1,6 @@
 {
+  "menu": "Match menu",
+  "openMenu": "Open menu",
   "appName": "Open Handball Stats",
   "tagline": "Live tagging. Open data.",
   "liveWorkspace": "MATCH WORKSPACE",

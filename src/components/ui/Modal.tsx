@@ -1,15 +1,27 @@
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useId,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { X } from "lucide-react";
 import { useTranslation } from "../../hooks/useTranslation";
 export function Modal({
   title,
   children,
   onClose,
+  variant = "default",
+  className = "",
 }: {
+  variant?: "default" | "drawer";
+  className?: string;
   title: string;
   children: ReactNode;
   onClose: () => void;
 }) {
+  const [closing, setClosing] = useState(false);
   const ref = useRef<HTMLDialogElement>(null);
   const id = useId();
   const startedOutside = useRef(false);
@@ -23,16 +35,30 @@ export function Modal({
         clientY > bounds.bottom),
     );
   }
-  const { t } = useTranslation();
+  function dismiss() {
+    if (variant === "drawer") setClosing(true);
+    else onClose();
+  }
   useEffect(() => {
+    if (!closing) return;
+    const timer = window.setTimeout(onClose, 180);
+    return () => window.clearTimeout(timer);
+  }, [closing, onClose]);
+  const { t } = useTranslation();
+  useLayoutEffect(() => {
     const dialog = ref.current;
+    const opener = document.activeElement;
     dialog?.showModal();
-    return () => dialog?.close();
+    return () => {
+      dialog?.close();
+      if (opener instanceof HTMLElement && opener.isConnected)
+        opener.focus({ preventScroll: true });
+    };
   }, []);
   return (
     <dialog
       ref={ref}
-      className="modal"
+      className={`modal ${variant === "drawer" ? "drawer" : ""} ${closing ? "is-closing" : ""} ${className}`}
       aria-labelledby={id}
       onPointerDown={(event) => {
         startedOutside.current =
@@ -45,12 +71,12 @@ export function Modal({
           event.target === event.currentTarget &&
           outside(event.clientX, event.clientY)
         )
-          onClose();
+          dismiss();
         startedOutside.current = false;
       }}
       onCancel={(e) => {
         e.preventDefault();
-        onClose();
+        dismiss();
       }}
     >
       <div className="modal-heading">
@@ -58,7 +84,7 @@ export function Modal({
         <button
           className="icon-button"
           aria-label={t("close")}
-          onClick={onClose}
+          onClick={dismiss}
         >
           <X size={20} />
         </button>

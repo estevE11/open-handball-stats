@@ -1,8 +1,11 @@
+import { Modal } from "./components/ui/Modal";
 import { PossessionBall } from "./components/app/PossessionBall";
 import { usePreferencesStore } from "./store/preferencesStore";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useRegisterSW } from "virtual:pwa-register/react";
 import {
+  Menu,
+  Activity,
   Moon,
   Sun,
   ChevronRight,
@@ -36,6 +39,9 @@ export default function App() {
   const { match } = store;
   const { t, language, setLanguage } = useTranslation();
   const [dialog, setDialog] = useState<DialogKind | null>(null);
+  const [mobilePanel, setMobilePanel] = useState<"menu" | "events" | null>(
+    null,
+  );
   const [notice, setNotice] = useState<TranslationKey | null>(null);
   const [now, setNow] = useState(Date.now);
   const [offline, setOffline] = useState(!navigator.onLine);
@@ -105,60 +111,213 @@ export default function App() {
       setNotice("persistDenied");
     }
   }
+  useEffect(() => {
+    const query = window.matchMedia("(min-width: 768px)");
+    const closeMobilePanel = () => {
+      if (query.matches) setMobilePanel(null);
+    };
+    query.addEventListener("change", closeMobilePanel);
+    return () => query.removeEventListener("change", closeMobilePanel);
+  }, []);
+  function openDialog(kind: DialogKind) {
+    setMobilePanel(null);
+    setDialog(kind);
+  }
+  const headerContent = (
+    <>
+      <a className="brand" href="/" aria-label={t("appName")}>
+        <img src="/icon.svg" alt="" />
+        <div>
+          Open Handball <b>Stats</b>
+          <span>{t("tagline")}</span>
+        </div>
+        <small>v0.1</small>
+      </a>
+      <div className="header-actions">
+        <button
+          className="icon-button theme-toggle"
+          aria-label={t(theme === "dark" ? "lightMode" : "darkMode")}
+          title={t(theme === "dark" ? "lightMode" : "darkMode")}
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+        >
+          {theme === "dark" ? <Sun size={19} /> : <Moon size={19} />}
+        </button>
+        <div
+          className="language-toggle"
+          role="group"
+          aria-label="Language / Idioma"
+        >
+          {(["en", "es"] as const).map((lang) => (
+            <button
+              key={lang}
+              aria-pressed={language === lang}
+              onClick={() => setLanguage(lang)}
+            >
+              {lang.toUpperCase()}
+            </button>
+          ))}
+        </div>
+        <button
+          className="button secondary"
+          disabled={!store.ready}
+          onClick={() => openDialog("library")}
+        >
+          <FolderOpen size={17} />
+          <span>{t("matches")}</span>
+        </button>
+        <button
+          className="button primary"
+          disabled={!store.ready}
+          onClick={() => openDialog("new")}
+        >
+          <Plus size={17} />
+          <span>{t("newMatch")}</span>
+        </button>
+      </div>
+    </>
+  );
+  const matchInfo = (
+    <div>
+      <div className="eyebrow">
+        {t("liveWorkspace")}
+        <span>/</span>
+        <span>{t("localFirst")}</span>
+      </div>
+      <h1>{match.matchName}</h1>
+      <div className="match-meta">
+        {match.competition && (
+          <span className="competition">{match.competition}</span>
+        )}
+        <span>
+          {new Date(match.date).toLocaleDateString(
+            language === "es" ? "es-ES" : "en-GB",
+            { day: "numeric", month: "short", year: "numeric" },
+          )}
+        </span>
+        <span className="save-status" role="status">
+          <span className={`tiny-dot ${store.saveStatus}`} />
+          {t(
+            store.saveStatus === "loading"
+              ? "loading"
+              : store.saveStatus === "error"
+                ? "saveError"
+                : store.saveStatus,
+          )}
+        </span>
+      </div>
+    </div>
+  );
+  const workspaceActions = (
+    <div className="workspace-actions">
+      <button
+        className="button secondary"
+        disabled={importing || !store.ready}
+        onClick={() => input.current?.click()}
+      >
+        <Upload size={16} />
+        {t("import")}
+      </button>
+      <button
+        className="button primary"
+        disabled={!store.ready}
+        onClick={() => openDialog("export")}
+      >
+        <Download size={16} />
+        {t("export")}
+      </button>
+    </div>
+  );
+  const footerContent = (
+    <>
+      <button
+        className="button plain storage-button"
+        onClick={() => {
+          setMobilePanel(null);
+          void protectStorage();
+        }}
+        title={t("persistent")}
+      >
+        {offline ? <WifiOff size={14} /> : <ShieldCheck size={14} />}{" "}
+        {offline
+          ? t("offline")
+          : offlineReady
+            ? t("offlineReady")
+            : t("localStorage")}
+      </button>
+      <span className="footer-ecosystem">
+        {t("ecosystem")}
+        <a
+          href="https://open-handball-video.vercel.app"
+          target="_blank"
+          rel="noreferrer"
+        >
+          {t("video")} ↗
+        </a>
+        <a
+          href="https://open-handball-tactics.vercel.app"
+          target="_blank"
+          rel="noreferrer"
+        >
+          {t("board")} ↗
+        </a>
+      </span>
+      <span className="footer-data">
+        <HardDrive size={13} />
+        {t("allLocal")}
+      </span>
+    </>
+  );
   const running = match.clockStartedAt !== null;
   return (
     <div className="app-shell">
-      <header className="topbar">
-        <a className="brand" href="/" aria-label={t("appName")}>
-          <img src="/icon.svg" alt="" />
-          <div>
-            Open Handball <b>Stats</b>
-            <span>{t("tagline")}</span>
-          </div>
-          <small>v0.1</small>
-        </a>
-        <div className="header-actions">
-          <button
-            className="icon-button theme-toggle"
-            aria-label={t(theme === "dark" ? "lightMode" : "darkMode")}
-            title={t(theme === "dark" ? "lightMode" : "darkMode")}
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          >
-            {theme === "dark" ? <Sun size={19} /> : <Moon size={19} />}
-          </button>
-          <div
-            className="language-toggle"
-            role="group"
-            aria-label="Language / Idioma"
-          >
-            {(["en", "es"] as const).map((lang) => (
-              <button
-                key={lang}
-                aria-pressed={language === lang}
-                onClick={() => setLanguage(lang)}
-              >
-                {lang.toUpperCase()}
-              </button>
-            ))}
-          </div>
-          <button
-            className="button secondary"
-            disabled={!store.ready}
-            onClick={() => setDialog("library")}
-          >
-            <FolderOpen size={17} />
-            <span>{t("matches")}</span>
-          </button>
-          <button
-            className="button primary"
-            disabled={!store.ready}
-            onClick={() => setDialog("new")}
-          >
-            <Plus size={17} />
-            <span>{t("newMatch")}</span>
-          </button>
+      <input
+        ref={input}
+        type="file"
+        accept=".json,application/json"
+        className="hidden"
+        aria-label={t("import")}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) {
+            setMobilePanel(null);
+            void importFile(file);
+          }
+        }}
+      />
+      <div className="mobile-toolbar">
+        <button
+          className="icon-button"
+          aria-label={t("openMenu")}
+          aria-haspopup="dialog"
+          aria-expanded={mobilePanel === "menu"}
+          onClick={() => setMobilePanel("menu")}
+        >
+          <Menu size={21} />
+        </button>
+        <div className="mobile-match-title">
+          <strong title={match.matchName}>{match.matchName}</strong>
+          <span>
+            <i className={`tiny-dot ${store.saveStatus}`} />
+            {t(
+              store.saveStatus === "error"
+                ? "saveError"
+                : store.saveStatus === "loading"
+                  ? "loading"
+                  : store.saveStatus,
+            )}
+          </span>
         </div>
-      </header>
+        <button
+          className="button secondary mobile-events-button"
+          aria-label={t("liveEvents")}
+          aria-haspopup="dialog"
+          onClick={() => setMobilePanel("events")}
+        >
+          <Activity size={18} />
+          <span>{match.events.length}</span>
+        </button>
+      </div>
+      <header className="topbar">{headerContent}</header>
       {notice && (
         <div className="notice" role="status">
           <span>{t(notice)}</span>
@@ -194,64 +353,8 @@ export default function App() {
       )}
       <main className="workspace">
         <div className="workspace-heading">
-          <div>
-            <div className="eyebrow">
-              {t("liveWorkspace")}
-              <span>/</span>
-              <span>{t("localFirst")}</span>
-            </div>
-            <h1>{match.matchName}</h1>
-            <div className="match-meta">
-              {match.competition && (
-                <span className="competition">{match.competition}</span>
-              )}
-              <span>
-                {new Date(match.date).toLocaleDateString(
-                  language === "es" ? "es-ES" : "en-GB",
-                  { day: "numeric", month: "short", year: "numeric" },
-                )}
-              </span>
-              <span className="save-status" role="status">
-                <span className={`tiny-dot ${store.saveStatus}`} />
-                {t(
-                  store.saveStatus === "loading"
-                    ? "loading"
-                    : store.saveStatus === "error"
-                      ? "saveError"
-                      : store.saveStatus,
-                )}
-              </span>
-            </div>
-          </div>
-          <div className="workspace-actions">
-            <button
-              className="button secondary"
-              disabled={importing || !store.ready}
-              onClick={() => input.current?.click()}
-            >
-              <Upload size={16} />
-              {t("import")}
-            </button>
-            <button
-              className="button primary"
-              disabled={!store.ready}
-              onClick={() => setDialog("export")}
-            >
-              <Download size={16} />
-              {t("export")}
-            </button>
-            <input
-              ref={input}
-              type="file"
-              accept=".json,application/json"
-              className="hidden"
-              aria-label={t("import")}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) void importFile(file);
-              }}
-            />
-          </div>
+          {matchInfo}
+          {workspaceActions}
         </div>
         <fieldset
           className="match-workspace"
@@ -316,7 +419,7 @@ export default function App() {
                   onClick={store.toggleClock}
                 >
                   {running ? <Pause size={13} /> : <Play size={13} />}{" "}
-                  {t(running ? "pause" : "start")}
+                  <span>{t(running ? "pause" : "start")}</span>
                 </button>
                 <button
                   className="icon-button"
@@ -360,41 +463,30 @@ export default function App() {
           </div>
         </fieldset>
       </main>
-      <footer className="app-footer">
-        <button
-          className="button plain storage-button"
-          onClick={() => void protectStorage()}
-          title={t("persistent")}
+      <footer className="app-footer">{footerContent}</footer>
+      {mobilePanel === "menu" && (
+        <Modal
+          title={t("menu")}
+          variant="drawer"
+          onClose={() => setMobilePanel(null)}
         >
-          {offline ? <WifiOff size={14} /> : <ShieldCheck size={14} />}{" "}
-          {offline
-            ? t("offline")
-            : offlineReady
-              ? t("offlineReady")
-              : t("localStorage")}
-        </button>
-        <span className="footer-ecosystem">
-          {t("ecosystem")}
-          <a
-            href="https://open-handball-video.vercel.app"
-            target="_blank"
-            rel="noreferrer"
-          >
-            {t("video")} ↗
-          </a>
-          <a
-            href="https://open-handball-tactics.vercel.app"
-            target="_blank"
-            rel="noreferrer"
-          >
-            {t("board")} ↗
-          </a>
-        </span>
-        <span className="footer-data">
-          <HardDrive size={13} />
-          {t("allLocal")}
-        </span>
-      </footer>
+          <nav className="mobile-menu" aria-label={t("menu")}>
+            {headerContent}
+            {matchInfo}
+            {workspaceActions}
+            <div className="mobile-menu-footer">{footerContent}</div>
+          </nav>
+        </Modal>
+      )}
+      {mobilePanel === "events" && (
+        <Modal
+          title={t("liveEvents")}
+          className="events-modal"
+          onClose={() => setMobilePanel(null)}
+        >
+          <EventStream onEdit={(event) => setDialog({ event })} />
+        </Modal>
+      )}
       {dialog && (
         <MatchDialogs
           key={typeof dialog === "object" ? dialog.event.id : dialog}
