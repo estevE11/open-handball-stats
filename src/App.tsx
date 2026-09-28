@@ -1,9 +1,17 @@
 import { Modal } from "./components/ui/Modal";
 import { PossessionBall } from "./components/app/PossessionBall";
 import { usePreferencesStore } from "./store/preferencesStore";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import { useRegisterSW } from "virtual:pwa-register/react";
 import {
+  BarChart3,
   Menu,
   Activity,
   Moon,
@@ -27,7 +35,20 @@ import { TaggingPanel } from "./components/app/TaggingPanel";
 import { EventStream } from "./components/app/EventStream";
 import { MatchDialogs, type DialogKind } from "./components/app/MatchDialogs";
 
+const ReportPage = lazy(() => import("./components/report/ReportPage"));
+
 export default function App() {
+  const [reportOpen, setReportOpen] = useState(
+    () => location.hash === "#report",
+  );
+  useEffect(() => {
+    const onHash = () => {
+      setReportOpen(location.hash === "#report");
+      window.scrollTo(0, 0);
+    };
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
   const { theme, setTheme } = usePreferencesStore();
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -211,6 +232,17 @@ export default function App() {
     <div className="workspace-actions">
       <button
         className="button secondary"
+        disabled={!store.ready}
+        onClick={() => {
+          setMobilePanel(null);
+          location.hash = "report";
+        }}
+      >
+        <BarChart3 size={16} />
+        {t("report")}
+      </button>
+      <button
+        className="button secondary"
         disabled={importing || !store.ready}
         onClick={() => input.current?.click()}
       >
@@ -269,7 +301,7 @@ export default function App() {
   );
   const running = match.clockStartedAt !== null;
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${reportOpen ? "report-view" : ""}`}>
       <input
         ref={input}
         type="file"
@@ -351,118 +383,130 @@ export default function App() {
           </button>
         </div>
       )}
-      <main className="workspace">
-        <div className="workspace-heading">
-          {matchInfo}
-          {workspaceActions}
-        </div>
-        <fieldset
-          className="match-workspace"
-          disabled={!store.ready || importing}
-        >
-          <div
-            className="scoreboard"
-            data-attacker={match.currentAttackingTeamId}
-            style={
-              {
-                "--possession-color": teamOf(
-                  match,
-                  match.currentAttackingTeamId,
-                ).color,
-              } as CSSProperties
-            }
+      {reportOpen ? (
+        <Suspense fallback={<p className="report-loading">{t("loading")}</p>}>
+          <ReportPage
+            key={match.id}
+            match={match}
+            onBack={() => {
+              location.hash = "";
+            }}
+          />
+        </Suspense>
+      ) : (
+        <main className="workspace">
+          <div className="workspace-heading">
+            {matchInfo}
+            {workspaceActions}
+          </div>
+          <fieldset
+            className="match-workspace"
+            disabled={!store.ready || importing}
           >
-            <PossessionBall />
-            <span className="sr-only" role="status">
-              {teamOf(match, match.currentAttackingTeamId).name}{" "}
-              {t("attacking")}
-            </span>
             <div
-              className={`score-team home ${match.currentAttackingTeamId === "home" ? "has-ball" : ""}`}
+              className="scoreboard"
+              data-attacker={match.currentAttackingTeamId}
+              style={
+                {
+                  "--possession-color": teamOf(
+                    match,
+                    match.currentAttackingTeamId,
+                  ).color,
+                } as CSSProperties
+              }
             >
+              <PossessionBall />
+              <span className="sr-only" role="status">
+                {teamOf(match, match.currentAttackingTeamId).name}{" "}
+                {t("attacking")}
+              </span>
               <div
-                className="team-avatar"
-                style={{ background: match.homeTeam.color }}
+                className={`score-team home ${match.currentAttackingTeamId === "home" ? "has-ball" : ""}`}
               >
-                {match.homeTeam.name.slice(0, 2).toUpperCase()}
-              </div>
-              <div>
-                <small>{t("home")}</small>
-                <strong>{match.homeTeam.name}</strong>
-                <span>
-                  {t(
-                    match.currentAttackingTeamId === "home"
-                      ? "attacking"
-                      : "defending",
-                  )}
-                </span>
-              </div>
-              <b data-testid="home-score">{score(match, "home")}</b>
-            </div>
-            <div className="clock-panel">
-              <div className="period-label">
-                <span className={running ? "live-dot" : "paused-dot"} />
-                {t("period")} {match.period}
-                <span>·</span>
-                {t(running ? "running" : "paused")}
-              </div>
-              <button
-                className="clock"
-                onClick={() => setDialog("clock")}
-                aria-label={t("editClock")}
-              >
-                {formatTime(gameSeconds(match, now))}
-              </button>
-              <div className="clock-controls">
-                <button
-                  className="button clock-toggle"
-                  onClick={store.toggleClock}
+                <div
+                  className="team-avatar"
+                  style={{ background: match.homeTeam.color }}
                 >
-                  {running ? <Pause size={13} /> : <Play size={13} />}{" "}
-                  <span>{t(running ? "pause" : "start")}</span>
-                </button>
-                <button
-                  className="icon-button"
-                  disabled={match.period >= 20}
-                  onClick={() => setDialog("period")}
-                  aria-label={t("nextPeriod")}
-                >
-                  <ChevronRight size={19} />
-                </button>
+                  {match.homeTeam.name.slice(0, 2).toUpperCase()}
+                </div>
+                <div>
+                  <small>{t("home")}</small>
+                  <strong>{match.homeTeam.name}</strong>
+                  <span>
+                    {t(
+                      match.currentAttackingTeamId === "home"
+                        ? "attacking"
+                        : "defending",
+                    )}
+                  </span>
+                </div>
+                <b data-testid="home-score">{score(match, "home")}</b>
               </div>
-            </div>
-            <div
-              className={`score-team away ${match.currentAttackingTeamId === "away" ? "has-ball" : ""}`}
-            >
-              <b data-testid="away-score">{score(match, "away")}</b>
-              <div>
-                <small>{t("away")}</small>
-                <strong>{match.awayTeam.name}</strong>
-                <span>
-                  {t(
-                    match.currentAttackingTeamId === "away"
-                      ? "attacking"
-                      : "defending",
-                  )}
-                </span>
+              <div className="clock-panel">
+                <div className="period-label">
+                  <span className={running ? "live-dot" : "paused-dot"} />
+                  {t("period")} {match.period}
+                  <span>·</span>
+                  {t(running ? "running" : "paused")}
+                </div>
+                <button
+                  className="clock"
+                  onClick={() => setDialog("clock")}
+                  aria-label={t("editClock")}
+                >
+                  {formatTime(gameSeconds(match, now))}
+                </button>
+                <div className="clock-controls">
+                  <button
+                    className="button clock-toggle"
+                    onClick={store.toggleClock}
+                  >
+                    {running ? <Pause size={13} /> : <Play size={13} />}{" "}
+                    <span>{t(running ? "pause" : "start")}</span>
+                  </button>
+                  <button
+                    className="icon-button"
+                    disabled={match.period >= 20}
+                    onClick={() => setDialog("period")}
+                    aria-label={t("nextPeriod")}
+                  >
+                    <ChevronRight size={19} />
+                  </button>
+                </div>
               </div>
               <div
-                className="team-avatar"
-                style={{ background: match.awayTeam.color }}
+                className={`score-team away ${match.currentAttackingTeamId === "away" ? "has-ball" : ""}`}
               >
-                {match.awayTeam.name.slice(0, 2).toUpperCase()}
+                <b data-testid="away-score">{score(match, "away")}</b>
+                <div>
+                  <small>{t("away")}</small>
+                  <strong>{match.awayTeam.name}</strong>
+                  <span>
+                    {t(
+                      match.currentAttackingTeamId === "away"
+                        ? "attacking"
+                        : "defending",
+                    )}
+                  </span>
+                </div>
+                <div
+                  className="team-avatar"
+                  style={{ background: match.awayTeam.color }}
+                >
+                  {match.awayTeam.name.slice(0, 2).toUpperCase()}
+                </div>
               </div>
             </div>
-          </div>
-          <div className="editor-layout">
-            <TaggingPanel
-              onFault={() => setDialog("fault")}
-              onSanction={() => setDialog("sanction")}
-            />
-            <EventStream onEdit={(event) => setDialog({ event })} />
-          </div>
-        </fieldset>
-      </main>
+            <div className="editor-layout">
+              <TaggingPanel
+                onFault={() => setDialog("fault")}
+                onSanction={() => setDialog("sanction")}
+              />
+              <EventStream onEdit={(event) => setDialog({ event })} />
+            </div>
+          </fieldset>
+        </main>
+      )}
       <footer className="app-footer">{footerContent}</footer>
       {mobilePanel === "menu" && (
         <Modal

@@ -130,6 +130,15 @@ describe("match analysis", () => {
       shots: 2,
     });
   });
+  it("does not infer a counter-goal across a manual possession correction", () => {
+    let match = logEvent(newMatch(), "GOAL");
+    match = logEvent(logEvent(match, "POSSESSION_SWITCH"), "POSSESSION_SWITCH");
+    match = logEvent({ ...match, attackPhase: "COUNTERATTACK" }, "GOAL");
+    expect(buildReport(match).teams.away).toMatchObject({
+      caGoals: 1,
+      counterGoals: 0,
+    });
+  });
   it("keeps score cumulative across period filters, resets unknown defenses and merges equal bands", () => {
     let match = newMatch();
     match.awayTeam.currentDefense = "5:1";
