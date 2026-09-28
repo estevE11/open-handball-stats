@@ -2220,6 +2220,9 @@ body:has(dialog[open]) {
   padding: 0;
 }
 @media (max-width: 767px) {
+  .app-shell {
+    height: 100dvh;
+  }
   .app-shell > .topbar,
   .workspace > .workspace-heading,
   .app-shell > .app-footer,
@@ -2262,7 +2265,21 @@ body:has(dialog[open]) {
   .workspace {
     padding: 6px max(10px, env(safe-area-inset-right))
       max(8px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
-    flex: none;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .match-workspace {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .mobile-toolbar,
+  .scoreboard,
+  .phase-panel,
+  .defense-panel,
+  .tagging-bottom {
+    flex-shrink: 0;
   }
   .scoreboard {
     grid-template-columns: minmax(0, 1fr) 112px minmax(0, 1fr);
@@ -2346,7 +2363,11 @@ body:has(dialog[open]) {
     clip-path: inset(50%);
   }
   .editor-layout {
-    display: block;
+    display: flex;
+    flex: 1;
+  }
+  .tagging-panel {
+    flex: 1;
   }
   .phase-panel {
     margin-bottom: 8px;
@@ -2366,11 +2387,15 @@ body:has(dialog[open]) {
     padding: 3px;
   }
   .action-grid {
+    flex: 2 0 auto;
+    grid-template-rows: repeat(2, 1fr);
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 6px;
   }
   .action {
-    min-height: clamp(66px, 11svh, 96px);
+    position: relative;
+    min-height: 66px;
+    justify-content: center;
     padding: 8px;
     border-radius: 8px;
   }
@@ -2381,6 +2406,11 @@ body:has(dialog[open]) {
     width: 20px;
     height: 20px;
   }
+  .action-top > .modal-indicator {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+  }
   .action > strong {
     font-size: 12px;
     letter-spacing: -0.2px;
@@ -2390,6 +2420,7 @@ body:has(dialog[open]) {
     display: none;
   }
   .secondary-actions {
+    flex: 1 0 auto;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 5px;
     margin: 6px 0 10px;
@@ -2398,7 +2429,7 @@ body:has(dialog[open]) {
     min-height: 70px;
     padding: 7px 5px;
     gap: 5px;
-    justify-content: flex-start;
+    justify-content: center;
     border-radius: 8px;
   }
   .aux-action > svg:not(.modal-indicator) {

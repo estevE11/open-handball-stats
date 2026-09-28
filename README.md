@@ -22,7 +22,7 @@ Browser tests use installed Google Chrome locally. For Chromium, run `npx playwr
 
 ## Live tagging
 
-- Phones below 768px use a compact board with the scoreboard, clock, six main actions, four auxiliary actions, tactical selectors, and Undo visible together. The event-count button opens the live stream in a modal, including note editing. The menu button opens an animated side drawer with language, theme, match management, import/export, and storage controls. Both overlays close from the backdrop or Escape; reduced-motion settings are respected. Tablet and desktop layouts retain the full header and event stream.
+- Phones below 768px use a compact board with the scoreboard, clock, six main actions, four auxiliary actions, tactical selectors, and Undo visible together. Action buttons expand to share the available viewport height, while the scoreboard and tactical controls stay compact. The event-count button opens the live stream in a modal, including note editing. The menu button opens an animated side drawer with language, theme, match management, import/export, and storage controls. Both overlays close from the backdrop or Escape; reduced-motion settings are respected. Tablet and desktop layouts retain the full header and event stream.
 
 - The header theme button switches between light and dark appearances. The initial theme uses the device preference; explicit choices persist on this browser. All tagging controls and dialogs support both themes.
 - The four-button lower action row contains Possession regained, 7m, sanctions, and manual possession switching (two columns on phones). The center of the second row is Shot blocked, with Technical fault to its right. Only Technical fault and Sanctions show a top-right arrow to indicate a dialog.

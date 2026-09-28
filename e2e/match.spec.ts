@@ -790,9 +790,40 @@ for (const [width, height] of [
           expect(bounds.y + bounds.height).toBeLessThanOrEqual(height);
         }
       }
+      const undo = (await page.locator(".undo").boundingBox())!;
+      expect(height - undo.y - undo.height).toBeLessThanOrEqual(9);
+      expect(
+        await page.evaluate(() => document.documentElement.scrollHeight),
+      ).toBe(height);
       await page.screenshot({
         path: testInfo.outputPath(`mobile-${width}-${language}.png`),
       });
+      if (width === 390 && language === "EN") {
+        const mainBefore = (await page
+          .locator(".action")
+          .first()
+          .boundingBox())!;
+        const auxBefore = (await page
+          .locator(".aux-action")
+          .first()
+          .boundingBox())!;
+        await page.setViewportSize({ width, height: height + 180 });
+        const mainAfter = (await page
+          .locator(".action")
+          .first()
+          .boundingBox())!;
+        const auxAfter = (await page
+          .locator(".aux-action")
+          .first()
+          .boundingBox())!;
+        expect(mainAfter.height - mainBefore.height).toBeGreaterThan(50);
+        expect(auxAfter.height - auxBefore.height).toBeGreaterThan(50);
+        const resizedUndo = (await page.locator(".undo").boundingBox())!;
+        expect(
+          height + 180 - resizedUndo.y - resizedUndo.height,
+        ).toBeLessThanOrEqual(9);
+        await page.setViewportSize({ width, height });
+      }
     }
   });
 }
