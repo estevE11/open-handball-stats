@@ -18,6 +18,7 @@
   "create": "Create match",
   "cancel": "Cancel",
   "close": "Close",
+  "dismissNotice": "Dismiss notification",
   "saved": "Saved on this device",
   "saving": "Saving…",
   "loading": "Opening your match…",
@@ -87,7 +88,7 @@
   "notes": "Notes (optional)",
   "exportHelp": "Your complete match, ready to go. Tactical context is included in every format.",
   "csvHelp": "Spreadsheet-ready event data",
-  "jsonHelp": "Full backup · import again anytime",
+  "jsonHelp": "Move or restore a complete match: teams, events, tactics, notes and clock. Import this JSON to continue tagging and view its report.",
   "xmlHelp": "Sportscode XML · Nacsport / LongoMatch",
   "offset": "Video offset (seconds)",
   "xmlNote": "XML clips include 5 seconds before and 3 after each tag. Align the cumulative clock with your video; pauses and halftime may need adjustments in your video editor. Import support depends on software version.",
@@ -181,5 +182,10 @@
   "shotShare": "Share of shots",
   "reportGenerated": "Generated locally with Open Handball Stats",
   "reportSnapshot": "Report snapshot",
-  "page": "Page"
+  "page": "Page",
+  "importMatch": "Import match",
+  "exportMatch": "Export match",
+  "fullMatchBackup": "Full match backup",
+  "matchTransferHelp": "Export a match as JSON, send the file to your other device, then import it here. Existing matches are kept.",
+  "importSuccess": "Match imported and saved as a separate local copy."
 }

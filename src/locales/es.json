@@ -18,6 +18,7 @@
   "create": "Crear partido",
   "cancel": "Cancelar",
   "close": "Cerrar",
+  "dismissNotice": "Cerrar notificación",
   "saved": "Guardado en este dispositivo",
   "saving": "Guardando…",
   "loading": "Abriendo tu partido…",
@@ -87,7 +88,7 @@
   "notes": "Notas (opcional)",
   "exportHelp": "Tu partido completo, listo para compartir. Todos los formatos incluyen el contexto táctico.",
   "csvHelp": "Acciones listas para hojas de cálculo",
-  "jsonHelp": "Copia completa · vuelve a importarla",
+  "jsonHelp": "Transfiere o restaura un partido completo: equipos, acciones, táctica, notas y reloj. Importa este JSON para seguir registrando y ver su informe.",
   "xmlHelp": "XML Sportscode · Nacsport / LongoMatch",
   "offset": "Desfase del vídeo (segundos)",
   "xmlNote": "Los clips XML incluyen 5 segundos antes y 3 después de cada acción. Alinea el reloj acumulado con el vídeo; pausas y descanso pueden requerir ajustes en el editor. La importación depende de la versión del programa.",
@@ -181,5 +182,10 @@
   "shotShare": "Porcentaje de lanzamientos",
   "reportGenerated": "Generado localmente con Open Handball Stats",
   "reportSnapshot": "Resumen del informe",
-  "page": "Página"
+  "page": "Página",
+  "importMatch": "Importar partido",
+  "exportMatch": "Exportar partido",
+  "fullMatchBackup": "Copia completa del partido",
+  "matchTransferHelp": "Exporta un partido en JSON, envía el archivo a tu otro dispositivo e impórtalo aquí. Se conservan los partidos existentes.",
+  "importSuccess": "Partido importado y guardado como una copia local independiente."
 }

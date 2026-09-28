@@ -3,6 +3,7 @@ import { ClockEditor } from "./ClockEditor";
 import { useEffect, useState, type FormEvent } from "react";
 import {
   Download,
+  Upload,
   FileJson,
   FileSpreadsheet,
   FileCode2,
@@ -34,9 +35,11 @@ export type DialogKind =
 export function MatchDialogs({
   kind,
   onClose,
+  onImport,
 }: {
   kind: DialogKind;
   onClose: () => void;
+  onImport: () => void;
 }) {
   const { t } = useTranslation();
   const store = useMatchStore();
@@ -182,30 +185,56 @@ export function MatchDialogs({
       {kind === "library" && (
         <>
           <p className="dialog-description">{t("libraryHelp")}</p>
+          <div className="match-transfer-actions">
+            <button
+              className="button primary"
+              disabled={busy}
+              onClick={() => {
+                onClose();
+                onImport();
+              }}
+            >
+              <Upload size={17} />
+              {t("importMatch")}
+            </button>
+            <p>{t("matchTransferHelp")}</p>
+          </div>
           <div className="match-list">
             {matches.map((saved) => (
-              <button
-                key={saved.id}
-                className="match-row"
-                disabled={busy || saved.id === match.id}
-                onClick={() => {
-                  const parsed = matchSchema.safeParse(saved);
-                  if (parsed.success) void openMatch(parsed.data);
-                  else setError("loadError");
-                }}
-              >
-                <FolderOpen size={22} />
-                <span>
-                  <strong>{saved.matchName}</strong>
-                  <small>
-                    {new Date(saved.date).toLocaleDateString()} ·{" "}
-                    {saved.events.length} {t("events")}
-                  </small>
-                </span>
-                <b>
-                  {score(saved, "home")} : {score(saved, "away")}
-                </b>
-              </button>
+              <div className="match-library-item" key={saved.id}>
+                <button
+                  key={saved.id}
+                  className="match-row"
+                  disabled={busy || saved.id === match.id}
+                  onClick={() => {
+                    const parsed = matchSchema.safeParse(saved);
+                    if (parsed.success) void openMatch(parsed.data);
+                    else setError("loadError");
+                  }}
+                >
+                  <FolderOpen size={22} />
+                  <span>
+                    <strong>{saved.matchName}</strong>
+                    <small>
+                      {new Date(saved.date).toLocaleDateString()} ·{" "}
+                      {saved.events.length} {t("events")}
+                    </small>
+                  </span>
+                  <b>
+                    {score(saved, "home")} : {score(saved, "away")}
+                  </b>
+                </button>
+                <button
+                  className="icon-button match-download"
+                  aria-label={`${t("exportMatch")}: ${saved.matchName}`}
+                  title={t("exportMatch")}
+                  onClick={() =>
+                    downloadMatch(saved.id === match.id ? match : saved, "json")
+                  }
+                >
+                  <Download size={19} />
+                </button>
+              </div>
             ))}
           </div>
           <p className="dialog-note">{t("backupNote")}</p>
@@ -217,8 +246,8 @@ export function MatchDialogs({
           <div className="export-options">
             {(
               [
-                { format: "csv", icon: FileSpreadsheet, help: "csvHelp" },
                 { format: "json", icon: FileJson, help: "jsonHelp" },
+                { format: "csv", icon: FileSpreadsheet, help: "csvHelp" },
                 { format: "xml", icon: FileCode2, help: "xmlHelp" },
               ] as const
             ).map(({ format, icon: Icon, help }) => (
@@ -228,7 +257,10 @@ export function MatchDialogs({
               >
                 <Icon size={24} />
                 <span>
-                  <strong>{format.toUpperCase()}</strong>
+                  <strong>
+                    {format.toUpperCase()}
+                    {format === "json" && ` · ${t("fullMatchBackup")}`}
+                  </strong>
                   <small>{t(help)}</small>
                 </span>
                 <Download size={18} />

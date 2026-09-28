@@ -52,6 +52,8 @@ Open **Analysis report** beside Import/Export (or inside the mobile menu). The r
 
 ## Portable data
 
+To move a match to another device, open **My matches**, tap the download button beside that match, and transfer the resulting JSON file. On the destination device, open **My matches → Import match** and select the file. Import creates a separate local copy with the teams, events, notes, tactics, period, possession state and paused clock. Its score and analysis report are rebuilt from those events. Existing matches remain available. The current match can also be backed up using **Export data → JSON · Full match backup**; CSV/XML are event exports, not restorable match backups.
+
 The version 1 types and runtime validation live in `src/types/match.ts`. Stable team IDs are `home` and `away`. The requested match schema is extended with `schemaVersion`, match clock/period/attack state, optional event team IDs, `SHOT_BLOCKED`, `SANCTION`, `POSSESSION_SWITCH`, sanction subtypes, and the sanctioned team ID. Score is derived from goal events, so undo cannot leave stale score counters.
 
 ### CSV

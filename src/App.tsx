@@ -114,6 +114,7 @@ export default function App() {
       await flushSaves();
       if (useMatchStore.getState().saveStatus !== "saved")
         setNotice("saveError");
+      else setNotice("importSuccess");
     } catch {
       setNotice("importError");
     } finally {
@@ -353,7 +354,11 @@ export default function App() {
       {notice && (
         <div className="notice" role="status">
           <span>{t(notice)}</span>
-          <button className="button plain" onClick={() => setNotice(null)}>
+          <button
+            className="button plain"
+            aria-label={t("dismissNotice")}
+            onClick={() => setNotice(null)}
+          >
             {t("close")}
           </button>
         </div>
@@ -536,6 +541,7 @@ export default function App() {
           key={typeof dialog === "object" ? dialog.event.id : dialog}
           kind={dialog}
           onClose={() => setDialog(null)}
+          onImport={() => input.current?.click()}
         />
       )}
     </div>

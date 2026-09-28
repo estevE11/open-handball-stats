@@ -2536,3 +2536,48 @@ body:has(dialog[open]) {
     margin-top: 4px;
   }
 }
+
+/* Transfer any saved match without first making it the active session. */
+.match-transfer-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.match-transfer-actions > .button {
+  align-self: flex-start;
+}
+.match-transfer-actions > p {
+  font-size: 12px;
+  line-height: 1.7;
+  color: #849277;
+}
+.match-library-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  gap: 6px;
+  align-items: center;
+}
+.match-library-item .match-row {
+  min-width: 0;
+  gap: 10px;
+  padding: 14px;
+}
+.match-library-item .match-row > svg {
+  flex-shrink: 0;
+}
+.match-library-item .match-row > span {
+  min-width: 0;
+}
+.match-library-item .match-row > b {
+  flex-shrink: 0;
+}
+.match-download {
+  border: 1px solid #dfe4dd;
+}
+[data-theme="dark"] .match-transfer-actions > p {
+  color: #a3b29a;
+}
+[data-theme="dark"] .match-download {
+  border-color: #4c5e43;
+}

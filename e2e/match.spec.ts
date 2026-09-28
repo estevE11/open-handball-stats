@@ -577,7 +577,7 @@ test("undo survives reloads and reopening a match with exact action history", as
   await page.getByRole("button", { name: "My matches", exact: true }).click();
   await page
     .getByRole("dialog")
-    .getByRole("button", { name: /Home vs Away/ })
+    .getByRole("button", { name: /^Home vs Away/ })
     .click();
   await page.getByRole("button", { name: "Undo", exact: true }).click();
   await expect(page.getByTestId("home-score")).toHaveText("0");
