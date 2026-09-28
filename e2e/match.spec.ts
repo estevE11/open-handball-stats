@@ -199,7 +199,9 @@ test("language, new match library, notes and clock controls", async ({
   await page.getByRole("button", { name: "Deshacer", exact: true }).click();
   await expect(page.locator(".period-label")).toContainText("Periodo 1");
   await expect(
-    page.getByText("Guardado en este dispositivo", { exact: true }),
+    page
+      .getByText("Guardado en este dispositivo", { exact: true })
+      .filter({ visible: true }),
   ).toBeVisible();
   await page.reload();
   await expect(
@@ -512,6 +514,7 @@ test("larger auxiliary controls, modal markers and saved dark mode", async ({
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
+  await page.getByRole("button", { name: "Open menu" }).click();
   await page.getByRole("button", { name: "ES", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "Activar modo claro" }),
@@ -847,6 +850,16 @@ test("mobile drawer, event modal, notes, theme and match controls", async ({
   await page.getByRole("button", { name: /^JSON/ }).click();
   const exported = await download;
   expect(exported.suggestedFilename()).toMatch(/\.json$/);
+  await page.getByRole("button", { name: "Close", exact: true }).click();
+  await page.getByRole("button", { name: "Open menu" }).click();
+  const chooserPromise = page.waitForEvent("filechooser");
+  await menu.getByRole("button", { name: "Import JSON", exact: true }).click();
+  await (await chooserPromise).setFiles((await exported.path())!);
+  await expect(menu).toHaveCount(0);
+  await expect(page.getByTestId("home-score")).toHaveText("1");
+  await page.getByRole("button", { name: "Open menu" }).click();
+  await menu.getByRole("button", { name: "My matches", exact: true }).click();
+  await expect(page.locator(".match-row")).toHaveCount(3);
   await page.getByRole("button", { name: "Close", exact: true }).click();
   await page.getByRole("button", { name: "Open menu" }).click();
   await page.setViewportSize({ width: 1024, height: 820 });

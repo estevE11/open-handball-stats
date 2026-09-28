@@ -2202,6 +2202,7 @@ body:has(dialog[open]) {
   gap: 12px;
 }
 .events-modal .event-stream {
+  border-radius: 0;
   min-height: 260px;
   max-height: none;
   border: 0;
