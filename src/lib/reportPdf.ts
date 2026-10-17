@@ -22,7 +22,7 @@ import {
   efficiencyMetrics,
   fraction,
 } from "./reportMetrics";
-import { teamOf } from "./matchEngine";
+import { formatTime, teamOf } from "./matchEngine";
 
 export async function downloadReportPDF(
   match: MatchSession,
@@ -101,11 +101,11 @@ export async function downloadReportPDF(
     text(value, 15, y, 12);
     y += 10;
   }
-  function table(rows: [string, string, string][]) {
+  function table(rows: [string, string, string][], firstColumn = t("team")) {
     const tableHeader = () => {
       pdf.setFillColor("#edf2e8");
       pdf.rect(15, y - 5, 180, 10, "F");
-      text(t("team"), 18, y + 1, 9);
+      text(firstColumn, 18, y + 1, 9);
       text(
         fit(match.homeTeam.name, 43, 9),
         104,
@@ -269,6 +269,18 @@ export async function downloadReportPDF(
   }
   for (let offset = 0; offset < report.possessions.length; offset += 60)
     timeline(report.possessions.slice(offset, offset + 60));
+  header(t("scoreEveryFiveMinutes"));
+  paragraph(t("scoreCheckpointsHelp"), 8);
+  if (report.scoreCheckpoints.length)
+    table(
+      report.scoreCheckpoints.map((point) => [
+        formatTime(point.gameTimeSeconds),
+        String(point.homeScore),
+        String(point.awayScore),
+      ]),
+      t("clock"),
+    );
+  else paragraph(t("noScoreCheckpoints"));
   header(t("counterAttacks"));
   table(
     (

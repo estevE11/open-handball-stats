@@ -5,7 +5,7 @@ import type {
   MatchSession,
   TeamId,
 } from "../types/match";
-import { attributedEvents, otherTeam } from "./matchEngine";
+import { attributedEvents, gameSeconds, otherTeam } from "./matchEngine";
 
 export const shotTypes = [
   "GOAL",
@@ -286,6 +286,38 @@ function teamStats(possessions: Possession[], team: TeamId): TeamStats {
     counterAttack: counters.efficiency,
   };
 }
+function scoreCheckpoints(match: MatchSession) {
+  const elapsed = match.events.reduce(
+    (latest, event) => Math.max(latest, event.gameTimeSeconds),
+    gameSeconds(match),
+  );
+  const goals = match.events
+    .filter((event) => event.eventType === "GOAL")
+    .sort((a, b) => a.gameTimeSeconds - b.gameTimeSeconds);
+  const checkpoints: {
+    gameTimeSeconds: number;
+    homeScore: number;
+    awayScore: number;
+  }[] = [];
+  let homeScore = 0,
+    awayScore = 0,
+    goalIndex = 0;
+  for (let time = 300; time <= elapsed; time += 300) {
+    while (
+      goalIndex < goals.length &&
+      goals[goalIndex].gameTimeSeconds <= time
+    ) {
+      const goal = goals[goalIndex++];
+      const team =
+        goal.attackingTeamId ??
+        (goal.attackingTeamName === match.homeTeam.name ? "home" : "away");
+      if (team === "home") homeScore++;
+      else awayScore++;
+    }
+    checkpoints.push({ gameTimeSeconds: time, homeScore, awayScore });
+  }
+  return checkpoints;
+}
 export function buildReport(match: MatchSession, period?: number) {
   const all = reconstructPossessions(match);
   const possessions = all.filter(
@@ -293,6 +325,7 @@ export function buildReport(match: MatchSession, period?: number) {
   );
   return {
     possessions,
+    scoreCheckpoints: scoreCheckpoints(match),
     teams: {
       home: teamStats(possessions, "home"),
       away: teamStats(possessions, "away"),

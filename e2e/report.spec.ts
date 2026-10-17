@@ -15,6 +15,11 @@ function fixture() {
   match = logEvent(match, "SHOT_BLOCKED");
   match = logEvent({ ...match, period: 2 }, "GOAL");
   match = logEvent(match, "GOAL");
+  const times = [60, 300, 301, 450, 600, 650, 1800, 2100];
+  match.events.forEach((event, index) => {
+    event.gameTimeSeconds = times[index];
+  });
+  match.gameTimeSeconds = 2100;
   return match;
 }
 async function loadFixture(page: import("@playwright/test").Page) {
@@ -72,7 +77,27 @@ test("report mirrors team metrics, filters periods and inspects defense bands", 
       exact: true,
     }),
   ).toBeVisible();
+  const checkpoints = page.getByTestId("score-checkpoints");
+  await expect(
+    checkpoints.getByRole("heading", { name: "Score every 5 minutes" }),
+  ).toBeVisible();
+  await expect(
+    checkpoints.getByRole("row", { name: "05:00 1 0", exact: true }),
+  ).toBeVisible();
+  await expect(
+    checkpoints.getByRole("row", { name: "35:00 2 1", exact: true }),
+  ).toBeVisible();
+  expect(
+    await checkpoints.evaluate((panel) =>
+      panel.previousElementSibling?.textContent?.includes(
+        "Goal difference by possession",
+      ),
+    ),
+  ).toBe(true);
   await page.getByLabel("Report scope").selectOption("1");
+  await expect(
+    checkpoints.getByRole("row", { name: "35:00 2 1", exact: true }),
+  ).toBeVisible();
   await expect(page.getByTestId("home-attack")).toContainText("33.3%");
   await expect(page.getByTestId("away-defense")).toContainText("66.7%");
   await page.getByLabel("Inspect possession").fill("2");
@@ -179,4 +204,12 @@ test("empty report has unavailable percentages and no invented possessions", asy
   ).toBeVisible();
   await expect(page.getByTestId("home-attack")).toContainText("—");
   await expect(page.locator(".difference-chart")).toHaveCount(0);
+  await expect(
+    page.getByText("Five-minute scores appear once the match reaches 05:00.", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByTestId("score-checkpoints").getByRole("table"),
+  ).toHaveCount(0);
 });

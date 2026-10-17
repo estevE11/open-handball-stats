@@ -170,7 +170,7 @@
   "methodTurnovers": "Total balls lost = balls lost to a steal + technical faults. Recoveries won belong to the opponent’s attacks and are shown separately. Completed possessions = possessions ending with a shot + total balls lost. Shots count every attempt, including shots followed by a retained rebound, so they can exceed possessions ending with a shot.",
   "noReportData": "Tag your first attack to start the analysis.",
   "periodEmpty": "No attacks recorded in this period.",
-  "reportFilterHelp": "Statistics use the selected period. The score-difference chart always uses the cumulative match score. PDF includes this period and all its possessions, regardless of chart zoom.",
+  "reportFilterHelp": "Statistics use the selected period. The score-difference chart and five-minute scores always use the cumulative match score. PDF includes this period and all its possessions, regardless of chart zoom.",
   "originalTags": "Original possession tags",
   "outcome": "Outcome",
   "notFinished": "Not finished",
@@ -193,5 +193,8 @@
   "afterKeeperSave": "After a keeper save",
   "afterGoal": "After a goal conceded",
   "afterTechnicalFault": "After an opponent technical fault",
-  "unknownOrigin": "Unknown / unrecorded start"
+  "unknownOrigin": "Unknown / unrecorded start",
+  "scoreEveryFiveMinutes": "Score every 5 minutes",
+  "scoreCheckpointsHelp": "Cumulative whole-match scores at each completed five-minute mark, including goals recorded exactly at that time. Independent of the period filter and chart zoom.",
+  "noScoreCheckpoints": "Five-minute scores appear once the match reaches 05:00."
 }

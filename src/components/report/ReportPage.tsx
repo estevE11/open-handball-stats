@@ -250,6 +250,37 @@ export default function ReportPage({
         )}
         <p className="report-note">{t("defenseBandsHelp")}</p>
       </section>
+      <section className="report-card" data-testid="score-checkpoints">
+        <h2>{t("scoreEveryFiveMinutes")}</h2>
+        <p className="report-note">{t("scoreCheckpointsHelp")}</p>
+        {report.scoreCheckpoints.length ? (
+          <div className="report-table-scroll">
+            <table className="report-table compact">
+              <thead>
+                <tr>
+                  <th>{t("clock")}</th>
+                  {teams.map((team) => (
+                    <th key={team} style={tint(team)}>
+                      {teamOf(match, team).name}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {report.scoreCheckpoints.map((point) => (
+                  <tr key={point.gameTimeSeconds}>
+                    <th scope="row">{formatTime(point.gameTimeSeconds)}</th>
+                    <td>{point.homeScore}</td>
+                    <td>{point.awayScore}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="report-note">{t("noScoreCheckpoints")}</p>
+        )}
+      </section>
       <div className="report-two-columns">
         <section className="report-card">
           <h2>{t("efficiency")}</h2>

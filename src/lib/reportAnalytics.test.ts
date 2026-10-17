@@ -13,6 +13,38 @@ describe("match analysis", () => {
     expect(report.teams.home.attack.value).toBeNull();
     expect(report.teams.away.keeper.value).toBeNull();
   });
+  it("records cumulative scores at completed five-minute checkpoints, including exact-boundary goals", () => {
+    let match = logEvent({ ...newMatch(), gameTimeSeconds: 299 }, "GOAL");
+    match = logEvent({ ...match, gameTimeSeconds: 300 }, "GOAL");
+    match = logEvent({ ...match, gameTimeSeconds: 301 }, "GOAL");
+    match = logEvent({ ...match, gameTimeSeconds: 600 }, "GOAL");
+    match = { ...match, period: 2, gameTimeSeconds: 970 };
+    const expected = [
+      { gameTimeSeconds: 300, homeScore: 1, awayScore: 1 },
+      { gameTimeSeconds: 600, homeScore: 2, awayScore: 2 },
+      { gameTimeSeconds: 900, homeScore: 2, awayScore: 2 },
+    ];
+    expect(buildReport(match).scoreCheckpoints).toEqual(expected);
+    expect(buildReport(match, 2).scoreCheckpoints).toEqual(expected);
+  });
+  it("does not invent five-minute checkpoints before the match reaches them", () => {
+    expect(buildReport(newMatch()).scoreCheckpoints).toEqual([]);
+    expect(
+      buildReport({ ...newMatch(), gameTimeSeconds: 299 }).scoreCheckpoints,
+    ).toEqual([]);
+    expect(
+      buildReport({ ...newMatch(), gameTimeSeconds: 300 }).scoreCheckpoints,
+    ).toEqual([{ gameTimeSeconds: 300, homeScore: 0, awayScore: 0 }]);
+  });
+  it("uses recorded goal times even when the clock was corrected backwards or events are out of order", () => {
+    let match = logEvent({ ...newMatch(), gameTimeSeconds: 600 }, "GOAL");
+    match = logEvent({ ...match, gameTimeSeconds: 300 }, "GOAL");
+    match.gameTimeSeconds = 250;
+    expect(buildReport(match).scoreCheckpoints).toEqual([
+      { gameTimeSeconds: 300, homeScore: 0, awayScore: 1 },
+      { gameTimeSeconds: 600, homeScore: 1, awayScore: 1 },
+    ]);
+  });
   it("counts mirrored shooting, defense, keeper and turnover metrics", () => {
     let match = newMatch();
     for (const type of [
