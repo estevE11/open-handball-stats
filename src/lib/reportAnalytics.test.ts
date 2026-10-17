@@ -36,7 +36,7 @@ describe("match analysis", () => {
       steals: 1,
       lostBalls: 0,
       technicalFaults: 1,
-      turnovers: 2,
+      turnovers: 1,
     });
     expect(teams.away).toMatchObject({
       goals: 0,
@@ -147,7 +147,7 @@ describe("match analysis", () => {
     });
     expect(buildReport(match).teams.away.possessions).toBe(1);
   });
-  it("separates launched, finished, aborted and counter-goal transitions", () => {
+  it("includes counter-goals once in overall counterattacks and separates their origin", () => {
     let match = logEvent(newMatch(), "GOAL");
     match = logEvent({ ...match, attackPhase: "COUNTERATTACK" }, "GOAL");
     match = logEvent(
@@ -161,16 +161,79 @@ describe("match analysis", () => {
       caAttempts: 2,
       caFinished: 2,
       caGoals: 1,
-      counterGoalAttempts: 1,
-      counterGoals: 1,
+      counterattacks: { GOAL: { attempts: 1, goals: 1 } },
     });
     expect(teams.away.counterAttack.value).toBe(50);
     expect(teams.home).toMatchObject({
       caAttempts: 1,
       caAborted: 1,
       caFinished: 0,
-      counterGoalAttempts: 1,
+      counterattacks: { GOAL: { attempts: 1 } },
     });
+  });
+  it.each([
+    ["STEAL", "RECOVERY"],
+    ["SHOT_OUT", "RECOVERY"],
+    ["SHOT_BLOCKED", "RECOVERY"],
+    ["GK_SAVE", "KEEPER_SAVE"],
+    ["GOAL", "GOAL"],
+    ["TECHNICAL_FAULT", "TECHNICAL_FAULT"],
+  ] as const)("classifies a counterattack after %s as %s", (type, origin) => {
+    let match = logEvent(
+      newMatch(),
+      type,
+      type === "TECHNICAL_FAULT" ? { subType: "BAD_PASS" } : {},
+    );
+    match = logEvent({ ...match, attackPhase: "COUNTERATTACK" }, "GOAL");
+    const stats = buildReport(match).teams.away;
+    expect(stats.counterattacks[origin]).toMatchObject({
+      attempts: 1,
+      finished: 1,
+      goals: 1,
+    });
+    expect(
+      Object.values(stats.counterattacks).reduce(
+        (total, group) => total + group.attempts,
+        0,
+      ),
+    ).toBe(stats.caAttempts);
+    expect(stats.counterAttack.value).toBe(100);
+    expect(buildReport(match).possessions[1].origin).toBe(origin);
+  });
+  it("preserves the attack origin through an attacking rebound and period filtering", () => {
+    let match = logEvent(newMatch(), "GK_SAVE");
+    match = logEvent({ ...match, attackPhase: "COUNTERATTACK" }, "SHOT_OUT");
+    match = logEvent(match, "REBOUND_REGAINED");
+    match = logEvent({ ...match, attackPhase: "COUNTERATTACK" }, "GOAL");
+    const report = buildReport(match, 1);
+    expect(report.teams.away.counterattacks.KEEPER_SAVE).toMatchObject({
+      attempts: 1,
+      finished: 1,
+      goals: 1,
+    });
+    expect(report.teams.away.caAttempts).toBe(1);
+  });
+  it("reconciles attacking outcomes without adding defensive recoveries to losses", () => {
+    let match = logEvent(newMatch(), "SHOT_OUT");
+    match = logEvent(match, "REBOUND_REGAINED");
+    match = logEvent(match, "GOAL");
+    match = logEvent(match, "STEAL");
+    match = logEvent(match, "TECHNICAL_FAULT", { subType: "BAD_PASS" });
+    match = logEvent(match, "GOAL");
+    match = logEvent(match, "STEAL");
+    match = logEvent(match, "GOAL");
+    const home = buildReport(match).teams.home;
+    expect(home).toMatchObject({
+      possessions: 3,
+      shots: 2,
+      shotPossessions: 1,
+      steals: 1,
+      lostBalls: 1,
+      technicalFaults: 1,
+      turnovers: 2,
+    });
+    // Home has three possessions here: one shot-ending, two loss-ending.
+    expect(home.possessions).toBe(home.shotPossessions + home.turnovers);
   });
   it("ignores administrative switches, incomplete attacks and sanctions in efficiency denominators", () => {
     let match = logEvent(newMatch(), "POSSESSION_SWITCH");
@@ -204,13 +267,16 @@ describe("match analysis", () => {
       shots: 2,
     });
   });
-  it("does not infer a counter-goal across a manual possession correction", () => {
+  it("does not infer a counterattack origin across a manual possession correction", () => {
     let match = logEvent(newMatch(), "GOAL");
     match = logEvent(logEvent(match, "POSSESSION_SWITCH"), "POSSESSION_SWITCH");
     match = logEvent({ ...match, attackPhase: "COUNTERATTACK" }, "GOAL");
     expect(buildReport(match).teams.away).toMatchObject({
       caGoals: 1,
-      counterGoals: 0,
+      counterattacks: {
+        UNKNOWN: { attempts: 1, goals: 1 },
+        GOAL: { attempts: 0 },
+      },
     });
   });
   it("keeps score cumulative across period filters, resets unknown defenses and merges equal bands", () => {
@@ -227,7 +293,7 @@ describe("match analysis", () => {
       { system: "5:1", start: 4, end: 4 },
     ]);
     const report = buildReport(match, 2);
-    expect(report.teams.home.counterGoalAttempts).toBe(0);
+    expect(report.teams.home.counterattacks.GOAL.attempts).toBe(0);
     expect(report.teams.home.goals).toBe(1);
     expect(report.possessions[0]).toMatchObject({
       number: 5,

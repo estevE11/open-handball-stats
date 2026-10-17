@@ -16,7 +16,12 @@ import {
   type MatchReport,
   type Possession,
 } from "./reportAnalytics";
-import { countMetrics, efficiencyMetrics, fraction } from "./reportMetrics";
+import {
+  countMetrics,
+  counterattackSources,
+  efficiencyMetrics,
+  fraction,
+} from "./reportMetrics";
 import { teamOf } from "./matchEngine";
 
 export async function downloadReportPDF(
@@ -279,19 +284,16 @@ export async function downloadReportPDF(
       String(report.teams.away[key]),
     ]),
   );
-  heading(t("counterGoal"));
+  heading(t("counterattackOrigins"));
+  paragraph(t("counterattackOriginLegend"), 8);
   table(
-    (
-      [
-        ["launched", "counterGoalAttempts"],
-        ["finished", "counterGoalFinished"],
-        ["goals", "counterGoals"],
-      ] as const
-    ).map(([label, key]) => [
-      t(label),
-      String(report.teams.home[key]),
-      String(report.teams.away[key]),
-    ]),
+    counterattackSources.map(([label, origin]) => {
+      const display = (team: TeamId) => {
+        const data = report.teams[team].counterattacks[origin];
+        return `${data.attempts} / ${data.finished} / ${data.goals} · ${formatRatio(data.efficiency)}`;
+      };
+      return [t(label), display("home"), display("away")];
+    }),
   );
   paragraph(t("methodCounters"));
   header(t("shotOutcomes"));
@@ -340,6 +342,7 @@ export async function downloadReportPDF(
         String(report.teams.away[key]),
       ]),
   );
+  paragraph(t("methodTurnovers"), 8);
   header(t("defenseBreakdown"));
   table(
     defenseSystems.map((system) => {

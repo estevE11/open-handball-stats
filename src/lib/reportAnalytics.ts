@@ -17,6 +17,21 @@ const isShot = (event: MatchEvent) =>
   (shotTypes as readonly string[]).includes(event.eventType);
 const isMiss = (event?: MatchEvent) =>
   !!event && isShot(event) && event.eventType !== "GOAL";
+export const counterattackOrigins = [
+  "RECOVERY",
+  "KEEPER_SAVE",
+  "GOAL",
+  "TECHNICAL_FAULT",
+  "UNKNOWN",
+] as const;
+export type CounterattackOrigin = (typeof counterattackOrigins)[number];
+export interface CounterattackStats {
+  attempts: number;
+  finished: number;
+  goals: number;
+  aborted: number;
+  efficiency: Ratio;
+}
 export interface Possession {
   number: number;
   tagIndices: number[];
@@ -26,7 +41,7 @@ export interface Possession {
   phase: AttackPhase;
   defense: DefenseSystem;
   completed: boolean;
-  afterGoal: boolean;
+  origin: CounterattackOrigin;
   homeScore: number;
   awayScore: number;
   defenses: Record<TeamId, DefenseSystem | null>;
@@ -48,6 +63,7 @@ export interface TeamStats {
   possessions: number;
   pending: number;
   shots: number;
+  shotPossessions: number;
   saved: number;
   out: number;
   blocked: number;
@@ -59,17 +75,13 @@ export interface TeamStats {
   caFinished: number;
   caGoals: number;
   caAborted: number;
-  counterGoalAttempts: number;
-  counterGoalFinished: number;
-  counterGoals: number;
+  counterattacks: Record<CounterattackOrigin, CounterattackStats>;
   attack: Ratio;
   defense: Ratio;
-  opponentAttack: Ratio;
   shooting: Ratio;
   keeper: Ratio;
   keeperConceded: Ratio;
   counterAttack: Ratio;
-  counterGoal: Ratio;
 }
 export interface DefenseBand {
   system: DefenseSystem | null;
@@ -134,6 +146,23 @@ export function reconstructPossessions(match: MatchSession): Possession[] {
     }
     if (!active || active.team !== team || active.period !== event.period) {
       const previous = possessions.at(-1);
+      const previousOutcome =
+        knownTransition &&
+        previous?.completed &&
+        previous.team !== team &&
+        previous.period === event.period
+          ? previous.events.at(-1)?.eventType
+          : undefined;
+      const origin: CounterattackOrigin =
+        previousOutcome === "GOAL" || previousOutcome === "TECHNICAL_FAULT"
+          ? previousOutcome
+          : previousOutcome === "GK_SAVE"
+            ? "KEEPER_SAVE"
+            : ["STEAL", "SHOT_OUT", "SHOT_BLOCKED"].includes(
+                  previousOutcome ?? "",
+                )
+              ? "RECOVERY"
+              : "UNKNOWN";
       active = {
         number: possessions.length + 1,
         tagIndices: [],
@@ -143,13 +172,7 @@ export function reconstructPossessions(match: MatchSession): Possession[] {
         phase: event.attackPhase,
         defense: event.defenseSystem,
         completed: false,
-        afterGoal:
-          knownTransition &&
-          !!previous &&
-          previous.completed &&
-          previous.team !== team &&
-          previous.period === event.period &&
-          previous.events.at(-1)?.eventType === "GOAL",
+        origin,
         homeScore: 0,
         awayScore: 0,
         defenses: { home: null, away: null },
@@ -200,6 +223,18 @@ const caGoal = (p: Possession) =>
   p.events.some(
     (e) => e.attackPhase === "COUNTERATTACK" && e.eventType === "GOAL",
   );
+function summarizeCounterattacks(attacks: Possession[]): CounterattackStats {
+  const goals = attacks.filter(caGoal).length;
+  return {
+    attempts: attacks.length,
+    finished: attacks.filter(caShot).length,
+    goals,
+    aborted: attacks.filter((p) =>
+      p.events.some((e) => e.attackPhase === "COUNTERATTACK_ATTEMPTED"),
+    ).length,
+    efficiency: ratio(goals, attacks.length),
+  };
+}
 function teamStats(possessions: Possession[], team: TeamId): TeamStats {
   const own = possessions.filter((p) => p.team === team);
   const rival = possessions.filter((p) => p.team !== team);
@@ -213,8 +248,14 @@ function teamStats(possessions: Possession[], team: TeamId): TeamStats {
     conceded = count("GOAL", opponent),
     saves = count("GK_SAVE", opponent);
   const shots = events.filter(isShot).length;
-  const ca = own.filter(launched),
-    cg = ca.filter((p) => p.afterGoal);
+  const ca = own.filter(launched);
+  const counters = summarizeCounterattacks(ca);
+  const counterattacks = Object.fromEntries(
+    counterattackOrigins.map((origin) => [
+      origin,
+      summarizeCounterattacks(ca.filter((p) => p.origin === origin)),
+    ]),
+  ) as Record<CounterattackOrigin, CounterattackStats>;
   const steals = count("STEAL", opponent),
     lostBalls = count("STEAL"),
     technicalFaults = count("TECHNICAL_FAULT");
@@ -223,30 +264,26 @@ function teamStats(possessions: Possession[], team: TeamId): TeamStats {
     possessions: completed,
     pending: own.length - completed,
     shots,
+    shotPossessions: own.filter((p) => p.completed && isShot(p.events.at(-1)!))
+      .length,
     saved: count("GK_SAVE"),
     out: count("SHOT_OUT"),
     blocked: count("SHOT_BLOCKED"),
     steals,
     lostBalls,
     technicalFaults,
-    turnovers: steals + lostBalls + technicalFaults,
-    caAttempts: ca.length,
-    caFinished: ca.filter(caShot).length,
-    caGoals: ca.filter(caGoal).length,
-    caAborted: ca.filter((p) =>
-      p.events.some((e) => e.attackPhase === "COUNTERATTACK_ATTEMPTED"),
-    ).length,
-    counterGoalAttempts: cg.length,
-    counterGoalFinished: cg.filter(caShot).length,
-    counterGoals: cg.filter(caGoal).length,
+    turnovers: lostBalls + technicalFaults,
+    caAttempts: counters.attempts,
+    caFinished: counters.finished,
+    caGoals: counters.goals,
+    caAborted: counters.aborted,
+    counterattacks,
     attack: ratio(goals, completed),
     defense: ratio(rivalCompleted - conceded, rivalCompleted),
-    opponentAttack: ratio(conceded, rivalCompleted),
     shooting: ratio(goals, shots),
     keeper: ratio(saves, saves + conceded),
     keeperConceded: ratio(conceded, saves + conceded),
-    counterAttack: ratio(ca.filter(caGoal).length, ca.length),
-    counterGoal: ratio(cg.filter(caGoal).length, cg.length),
+    counterAttack: counters.efficiency,
   };
 }
 export function buildReport(match: MatchSession, period?: number) {

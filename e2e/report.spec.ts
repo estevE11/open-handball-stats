@@ -42,6 +42,36 @@ test("report mirrors team metrics, filters periods and inspects defense bands", 
   await loadFixture(page);
   await expect(page.getByTestId("home-attack")).toContainText("50.0%");
   await expect(page.getByTestId("away-attack")).toContainText("25.0%");
+  await expect(
+    page.getByRole("rowheader", {
+      name: "Opponent attacking efficiency",
+      exact: true,
+    }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("rowheader", {
+      name: "Counter-goal efficiency",
+      exact: true,
+    }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByTestId("home-counterattack-KEEPER_SAVE"),
+  ).toContainText("After a keeper save");
+  await expect(
+    page.getByTestId("home-counterattack-KEEPER_SAVE").locator("td"),
+  ).toHaveText(["1", "0", "0", "0.0%"]);
+  await expect(
+    page.getByTestId("away-counterattack-GOAL").locator("td"),
+  ).toHaveText(["1", "1", "0", "0.0%"]);
+  await expect(
+    page.getByRole("row", { name: "Total balls lost 1 1", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("row", {
+      name: "Possessions ending with a shot 3 3",
+      exact: true,
+    }),
+  ).toBeVisible();
   await page.getByLabel("Report scope").selectOption("1");
   await expect(page.getByTestId("home-attack")).toContainText("33.3%");
   await expect(page.getByTestId("away-defense")).toContainText("66.7%");

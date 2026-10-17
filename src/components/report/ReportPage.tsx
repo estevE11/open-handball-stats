@@ -10,6 +10,7 @@ import {
 } from "../../lib/reportAnalytics";
 import {
   countMetrics,
+  counterattackSources,
   efficiencyMetrics,
   fraction,
   type EfficiencyMetric,
@@ -368,20 +369,41 @@ export default function ReportPage({
               <p>
                 {t("aborted")}: <b>{report.teams[team].caAborted}</b>
               </p>
-              <div className="counter-goal">
-                <strong>{t("counterGoal")}</strong>
-                <p>
-                  {report.teams[team].counterGoalAttempts}{" "}
-                  {t("launched").toLowerCase()} ·{" "}
-                  {report.teams[team].counterGoalFinished}{" "}
-                  {t("finished").toLowerCase()} ·{" "}
-                  {report.teams[team].counterGoals} {t("goals").toLowerCase()}
-                </p>
-                <b>{formatRatio(report.teams[team].counterGoal)}</b>
+              <h4>{t("counterattackOrigins")}</h4>
+              <div className="report-table-scroll">
+                <table className="report-table compact counter-origins">
+                  <thead>
+                    <tr>
+                      <th>{t("origin")}</th>
+                      <th>{t("launched")}</th>
+                      <th>{t("finished")}</th>
+                      <th>{t("goals")}</th>
+                      <th>{t("caEfficiency")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {counterattackSources.map(([label, origin]) => {
+                      const data = report.teams[team].counterattacks[origin];
+                      return (
+                        <tr
+                          key={origin}
+                          data-testid={`${team}-counterattack-${origin}`}
+                        >
+                          <th scope="row">{t(label)}</th>
+                          <td>{data.attempts}</td>
+                          <td>{data.finished}</td>
+                          <td>{data.goals}</td>
+                          <td>{formatRatio(data.efficiency)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             </article>
           ))}
         </div>
+        <p className="report-note">{t("methodCounters")}</p>
       </section>
       <div className="report-two-columns">
         <section className="report-card">
@@ -442,7 +464,9 @@ export default function ReportPage({
             <div key={team} className="turnover-team" style={tint(team)}>
               <h3>
                 {teamOf(match, team).name}
-                <b>{report.teams[team].turnovers}</b>
+                <b>
+                  {t("totalTurnovers")}: {report.teams[team].turnovers}
+                </b>
               </h3>
               {(
                 [
@@ -465,6 +489,7 @@ export default function ReportPage({
               ))}
             </div>
           ))}
+          <p className="report-note">{t("methodTurnovers")}</p>
         </section>
       </div>
       <section className="report-card">
