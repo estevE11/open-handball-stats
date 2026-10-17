@@ -80,6 +80,73 @@ describe("match analysis", () => {
       expect(report.teams.home.shooting.value).toBe(50);
     },
   );
+  it.each(["GK_SAVE", "SHOT_BLOCKED", "SHOT_OUT"] as const)(
+    "keeps a manually restored %s rebound and penalty in the original possession",
+    (type) => {
+      let match = logEvent(newMatch(), type);
+      match = logEvent(match, "POSSESSION_SWITCH");
+      match = logEvent(match, "PENALTY_7M");
+      match = logEvent(match, "PENALTY_7M");
+      match = logEvent(match, "GOAL");
+      const report = buildReport(match);
+      expect(report.possessions).toHaveLength(1);
+      expect(report.possessions[0].tagIndices).toEqual([1, 2, 3]);
+      expect(report.teams.home).toMatchObject({
+        possessions: 1,
+        goals: 1,
+        shots: 2,
+        pending: 0,
+      });
+      expect(report.teams.away.possessions).toBe(0);
+    },
+  );
+  it("does not merge a rebound across a period boundary or an opponent action", () => {
+    let match = logEvent(newMatch(), "SHOT_OUT");
+    match = logEvent({ ...match, period: 2 }, "POSSESSION_SWITCH");
+    match = logEvent(match, "GOAL");
+    expect(buildReport(match).teams.home.possessions).toBe(2);
+
+    match = logEvent(newMatch(), "SHOT_OUT");
+    match = logEvent(match, "PENALTY_7M");
+    match = logEvent(match, "POSSESSION_SWITCH");
+    match = logEvent(match, "GOAL");
+    expect(buildReport(match).teams.home.possessions).toBe(2);
+  });
+  it("keeps repeated rebounds, a penalty and a goal within one possession", () => {
+    let match = newMatch();
+    for (const type of [
+      "SHOT_OUT",
+      "REBOUND_REGAINED",
+      "GK_SAVE",
+      "REBOUND_REGAINED",
+      "PENALTY_7M",
+      "GOAL",
+    ] as const)
+      match = logEvent(match, type);
+    const report = buildReport(match);
+    expect(report.possessions).toHaveLength(1);
+    expect(report.teams.home).toMatchObject({
+      possessions: 1,
+      goals: 1,
+      shots: 3,
+    });
+    expect(report.teams.away.possessions).toBe(0);
+  });
+  it("cancels a manual rebound correction when possession is switched away again", () => {
+    let match = logEvent(newMatch(), "SHOT_OUT");
+    match = logEvent(match, "POSSESSION_SWITCH");
+    expect(buildReport(match).teams.home).toMatchObject({
+      possessions: 0,
+      pending: 1,
+    });
+    match = logEvent(match, "POSSESSION_SWITCH");
+    match = logEvent(match, "GOAL");
+    expect(buildReport(match).teams.home).toMatchObject({
+      possessions: 1,
+      pending: 0,
+    });
+    expect(buildReport(match).teams.away.possessions).toBe(1);
+  });
   it("separates launched, finished, aborted and counter-goal transitions", () => {
     let match = logEvent(newMatch(), "GOAL");
     match = logEvent({ ...match, attackPhase: "COUNTERATTACK" }, "GOAL");
@@ -122,7 +189,14 @@ describe("match analysis", () => {
     match.currentAttackingTeamId = "home";
     match.currentPossessionIndex = 1;
     const rebound = logEvent(match, "REBOUND_REGAINED").events.at(-1)!;
-    match.events.push({ ...rebound, isPossessionFlipped: false });
+    match.events.push({
+      ...rebound,
+      attackingTeamId: "home",
+      attackingTeamName: "Home",
+      defendingTeamName: "Away",
+      possessionBeforeTeamId: undefined,
+      isPossessionFlipped: false,
+    });
     match = logEvent(match, "GOAL");
     expect(buildReport(match).teams.home).toMatchObject({
       possessions: 1,

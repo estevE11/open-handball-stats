@@ -53,6 +53,8 @@ export const eventSchema = z.object({
   attackingTeamName: text,
   defendingTeamName: text,
   attackingTeamId: z.enum(["home", "away"]).optional(),
+  // Rebounds belong to the recovering team; retain the pre-action team for undo.
+  possessionBeforeTeamId: z.enum(["home", "away"]).optional(),
   attackPhase: z.enum(attackPhases),
   defenseSystem: z.enum(defenseSystems),
   eventType: z.enum(eventTypes),
@@ -118,6 +120,15 @@ export const matchSchema = z
           .name !== event.attackingTeamName
       )
         bad("Inconsistent team identifier.");
+      if (
+        event.possessionBeforeTeamId &&
+        (event.eventType !== "REBOUND_REGAINED" ||
+          !event.isPossessionFlipped ||
+          match[
+            event.possessionBeforeTeamId === "home" ? "homeTeam" : "awayTeam"
+          ].name === event.attackingTeamName)
+      )
+        bad("Invalid rebound possession context.");
       const flips = [
         "GOAL",
         "GK_SAVE",

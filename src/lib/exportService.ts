@@ -1,5 +1,5 @@
 import { matchSchema, type MatchSession } from "../types/match";
-import { stopClock } from "./matchEngine";
+import { attributedEvents, stopClock } from "./matchEngine";
 const csvCell = (value: unknown) => {
   let text = String(value ?? "");
   // Prevent formula execution when opening user-authored names/notes in spreadsheets.
@@ -48,7 +48,7 @@ export function exportCSV(match: MatchSession): string {
     "\ufeff" +
     [
       header.join(","),
-      ...match.events.map((e) =>
+      ...attributedEvents(match).map((e) =>
         [
           e.id,
           e.matchId,
@@ -73,18 +73,21 @@ export function exportCSV(match: MatchSession): string {
   );
 }
 export function exportJSON(match: MatchSession): string {
-  return JSON.stringify(stopClock(match), null, 2);
+  return JSON.stringify(
+    { ...stopClock(match), events: attributedEvents(match) },
+    null,
+    2,
+  );
 }
 // Sportscode interchange: categories become rows, tactical fields become descriptor labels.
 // Times use the cumulative match clock; video alignment is configured at export.
 export function exportXML(match: MatchSession, offsetSeconds = 0): string {
   if (!Number.isFinite(offsetSeconds)) throw new Error("Invalid video offset");
+  const events = attributedEvents(match);
   const codes = [
-    ...new Set(
-      match.events.map((e) => `${e.attackingTeamName} · ${e.eventType}`),
-    ),
+    ...new Set(events.map((e) => `${e.attackingTeamName} · ${e.eventType}`)),
   ];
-  const instances = match.events.map((e, i) => {
+  const instances = events.map((e, i) => {
     const time = Math.max(0, e.gameTimeSeconds + offsetSeconds);
     const labels = {
       possession_index: e.possessionIndex,

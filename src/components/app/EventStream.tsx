@@ -3,7 +3,7 @@ import { eventAppearance } from "./eventAppearance";
 import { Activity, ArrowRight, MessageCircle, Target } from "lucide-react";
 import { useTranslation } from "../../hooks/useTranslation";
 import { useMatchStore } from "../../store/matchStore";
-import { formatTime } from "../../lib/matchEngine";
+import { attributedEvents, formatTime } from "../../lib/matchEngine";
 import type { MatchEvent } from "../../types/match";
 export function EventStream({
   onEdit,
@@ -12,6 +12,7 @@ export function EventStream({
 }) {
   const match = useMatchStore((s) => s.match);
   const { t } = useTranslation();
+  const events = attributedEvents(match);
   return (
     <aside className="event-stream">
       <div className="stream-heading">
@@ -44,7 +45,7 @@ export function EventStream({
         </div>
       ) : (
         <ol className="event-list" aria-label={t("liveEvents")}>
-          {[...match.events].reverse().map((e) => {
+          {events.reverse().map((e) => {
             const appearance = eventAppearance[e.eventType];
             const Icon = appearance.icon;
             const teamId =

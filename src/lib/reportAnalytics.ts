@@ -5,7 +5,7 @@ import type {
   MatchSession,
   TeamId,
 } from "../types/match";
-import { otherTeam } from "./matchEngine";
+import { attributedEvents, otherTeam } from "./matchEngine";
 
 export const shotTypes = [
   "GOAL",
@@ -99,14 +99,21 @@ export function reconstructPossessions(match: MatchSession): Possession[] {
   let active: Possession | undefined;
   let reboundCandidate: Possession | undefined;
   let knownTransition = false;
-  for (const event of match.events) {
+  for (const event of attributedEvents(match)) {
     const team =
       event.attackingTeamId ??
       (event.attackingTeamName === match.homeTeam.name ? "home" : "away");
     if (event.eventType === "SANCTION") continue;
     if (event.eventType === "POSSESSION_SWITCH") {
       active = undefined;
-      reboundCandidate = undefined;
+      // Switching straight back after a missed shot records the same attacking
+      // rebound as REBOUND_REGAINED. No opponent action has occurred yet.
+      if (reboundCandidate?.period === event.period) {
+        reboundCandidate.completed = otherTeam(team) !== reboundCandidate.team;
+        if (!reboundCandidate.tagIndices.includes(event.possessionIndex))
+          reboundCandidate.tagIndices.push(event.possessionIndex);
+        if (!reboundCandidate.completed) active = reboundCandidate;
+      } else reboundCandidate = undefined;
       knownTransition = false;
       continue;
     }
@@ -114,7 +121,7 @@ export function reconstructPossessions(match: MatchSession): Possession[] {
       if (
         event.isPossessionFlipped &&
         reboundCandidate &&
-        reboundCandidate.team === otherTeam(team) &&
+        reboundCandidate.team === team &&
         reboundCandidate.period === event.period &&
         isMiss(reboundCandidate.events.at(-1))
       ) {

@@ -87,9 +87,10 @@ export function parseHistory(
 export function undoLastEvent(match: MatchSession): MatchSession {
   const last = match.events.at(-1);
   if (!last) return match;
-  const attacker =
+  const eventTeam =
     last.attackingTeamId ??
     (last.attackingTeamName === match.homeTeam.name ? "home" : "away");
+  const attacker = last.possessionBeforeTeamId ?? eventTeam;
   const defenderKey = otherTeam(attacker) === "home" ? "homeTeam" : "awayTeam";
   return {
     ...match,
@@ -99,7 +100,10 @@ export function undoLastEvent(match: MatchSession): MatchSession {
     attackPhase: last.attackPhase,
     [defenderKey]: {
       ...match[defenderKey],
-      currentDefense: last.defenseSystem,
+      currentDefense:
+        attacker === eventTeam
+          ? last.defenseSystem
+          : match[defenderKey].currentDefense,
     },
   };
 }

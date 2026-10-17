@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { exportCSV, exportJSON, exportXML, importJSON } from "./exportService";
-import { logEvent, newMatch } from "./matchEngine";
+import { attributedEvents, logEvent, newMatch } from "./matchEngine";
+import { undoLastEvent } from "./matchHistory";
+import { buildReport } from "./reportAnalytics";
 describe("portable exports", () => {
   it("preserves blocked shots across every export format and JSON re-import", () => {
     const match = logEvent(
@@ -31,12 +33,81 @@ describe("portable exports", () => {
       );
       const legacy = {
         ...original,
-        events: [{ ...next.events[0], isPossessionFlipped: false }],
+        events: [
+          {
+            ...next.events[0],
+            attackingTeamId: "home" as const,
+            attackingTeamName: "Home",
+            defendingTeamName: "Away",
+            possessionBeforeTeamId: undefined,
+            isPossessionFlipped: false,
+          },
+        ],
       };
       const imported = importJSON(exportJSON(legacy));
       expect(imported.events[0].isPossessionFlipped).toBe(false);
       expect(imported.currentAttackingTeamId).toBe("home");
       expect(imported.currentPossessionIndex).toBe(1);
+    },
+  );
+  it.each(["home", "away"] as const)(
+    "corrects legacy rebound attribution for %s in exports without altering history",
+    (team) => {
+      const original = { ...newMatch(), currentAttackingTeamId: team };
+      original.homeTeam.currentDefense = "3:2:1";
+      original.awayTeam.currentDefense = "5:1";
+      const shot = logEvent(original, "SHOT_OUT");
+      const rebound = logEvent(shot, "REBOUND_REGAINED");
+      const before = shot.currentAttackingTeamId;
+      const beforeTeam = before === "home" ? shot.homeTeam : shot.awayTeam;
+      const recoveringTeam = team === "home" ? shot.homeTeam : shot.awayTeam;
+      const legacy = {
+        ...rebound,
+        events: [
+          shot.events[0],
+          {
+            ...rebound.events[1],
+            possessionBeforeTeamId: undefined,
+            attackingTeamId: before,
+            attackingTeamName: beforeTeam.name,
+            defendingTeamName: recoveringTeam.name,
+            defenseSystem: recoveringTeam.currentDefense,
+          },
+        ],
+      };
+      const corrected = attributedEvents(legacy)[1];
+      expect(corrected).toMatchObject({
+        attackingTeamId: team,
+        attackingTeamName: recoveringTeam.name,
+        defendingTeamName: beforeTeam.name,
+        defenseSystem: beforeTeam.currentDefense,
+        possessionBeforeTeamId: before,
+      });
+      expect(
+        attributedEvents({ ...legacy, events: attributedEvents(legacy) })[1],
+      ).toEqual(corrected);
+      expect(legacy.events[1].attackingTeamId).toBe(before);
+      expect(exportCSV(legacy)).toContain(
+        `"${recoveringTeam.name}","${beforeTeam.name}","STATIC","${beforeTeam.currentDefense}","REBOUND_REGAINED"`,
+      );
+      expect(exportXML(legacy)).toContain(
+        `<code>${recoveringTeam.name} · REBOUND_REGAINED</code>`,
+      );
+      const restored = importJSON(exportJSON(legacy));
+      expect(restored.events[1].attackingTeamId).toBe(team);
+      expect(undoLastEvent(restored)).toMatchObject({
+        currentAttackingTeamId: before,
+        currentPossessionIndex: shot.currentPossessionIndex,
+        homeTeam: shot.homeTeam,
+        awayTeam: shot.awayTeam,
+      });
+      expect(buildReport(logEvent(restored, "GOAL")).teams[team]).toMatchObject(
+        {
+          possessions: 1,
+          goals: 1,
+          shots: 2,
+        },
+      );
     },
   );
   it("round-trips complete match tactics with fresh identifiers", () => {
@@ -88,6 +159,14 @@ describe("portable exports", () => {
   it("rejects a retention event that claims to flip possession", () => {
     const match = logEvent(newMatch(), "PENALTY_7M");
     match.events[0].isPossessionFlipped = true;
+    expect(() => importJSON(JSON.stringify(match))).toThrow();
+  });
+  it("rejects rebound undo context that conflicts with the event", () => {
+    const match = logEvent(newMatch(), "REBOUND_REGAINED");
+    match.events[0].possessionBeforeTeamId = "away";
+    expect(() => importJSON(JSON.stringify(match))).toThrow();
+    match.events[0].possessionBeforeTeamId = "home";
+    match.events[0].eventType = "GOAL";
     expect(() => importJSON(JSON.stringify(match))).toThrow();
   });
   it("exports a paused snapshot without changing the live clock", () => {

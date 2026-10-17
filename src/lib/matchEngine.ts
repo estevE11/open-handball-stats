@@ -51,7 +51,9 @@ export function logEvent(
   details: Pick<MatchEvent, "subType" | "sanctionTeamId" | "notes"> = {},
   now = Date.now(),
 ): MatchSession {
-  const attacker = match.currentAttackingTeamId;
+  const before = match.currentAttackingTeamId;
+  const attacker =
+    eventType === "REBOUND_REGAINED" ? otherTeam(before) : before;
   const defender = otherTeam(attacker);
   const flips = [
     "GOAL",
@@ -71,6 +73,9 @@ export function logEvent(
     gameTimeSeconds: Math.floor(gameSeconds(match, now)),
     realTimestamp: now,
     attackingTeamId: attacker,
+    ...(eventType === "REBOUND_REGAINED"
+      ? { possessionBeforeTeamId: before }
+      : {}),
     attackingTeamName: teamOf(match, attacker).name,
     defendingTeamName: teamOf(match, defender).name,
     attackPhase: match.attackPhase,
@@ -82,10 +87,43 @@ export function logEvent(
   return {
     ...match,
     events: [...match.events, event],
-    currentAttackingTeamId: flips ? defender : attacker,
+    currentAttackingTeamId: flips ? otherTeam(before) : before,
     currentPossessionIndex: match.currentPossessionIndex + Number(flips),
     attackPhase: flips ? ("STATIC" as AttackPhase) : match.attackPhase,
   };
+}
+// Older rebounds described the team before the automatic switch back. Correct
+// their attribution for display and exports without rewriting stored history.
+export function attributedEvents(match: MatchSession): MatchEvent[] {
+  let previous: MatchEvent | undefined;
+  return match.events.map((event) => {
+    if (event.eventType === "SANCTION") return event;
+    let attributed = event;
+    if (
+      event.eventType === "REBOUND_REGAINED" &&
+      event.isPossessionFlipped &&
+      !event.possessionBeforeTeamId
+    ) {
+      const before =
+        event.attackingTeamId ??
+        (event.attackingTeamName === match.homeTeam.name ? "home" : "away");
+      const attacker = otherTeam(before);
+      attributed = {
+        ...event,
+        possessionBeforeTeamId: before,
+        attackingTeamId: attacker,
+        attackingTeamName: teamOf(match, attacker).name,
+        defendingTeamName: teamOf(match, before).name,
+        defenseSystem:
+          previous?.period === event.period &&
+          previous.attackingTeamName === teamOf(match, attacker).name
+            ? previous.defenseSystem
+            : teamOf(match, before).currentDefense,
+      };
+    }
+    previous = attributed;
+    return attributed;
+  });
 }
 export function score(match: MatchSession, team: TeamId) {
   return match.events.filter(

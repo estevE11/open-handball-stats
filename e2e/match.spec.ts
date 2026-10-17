@@ -727,6 +727,9 @@ for (const shot of ["Keeper save", "Shot blocked", "Off-target / post"]) {
       "Home attacking",
     );
     await expect(page.locator(".event-list li")).toHaveCount(2);
+    await expect(
+      page.locator(".event-list li").first().locator(".event-detail > span"),
+    ).toHaveText("Home");
     await expect(page.getByTestId("home-score")).toHaveText("0");
     await expect(page.getByTestId("away-score")).toHaveText("0");
     await expect(

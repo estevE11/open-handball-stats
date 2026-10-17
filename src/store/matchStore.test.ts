@@ -98,7 +98,14 @@ describe("persistent undo", () => {
       const legacy = {
         ...original,
         events: [
-          { ...logEvent(original, type).events[0], isPossessionFlipped: false },
+          {
+            ...logEvent(original, type).events[0],
+            attackingTeamId: "home" as const,
+            attackingTeamName: "Home",
+            defendingTeamName: "Away",
+            possessionBeforeTeamId: undefined,
+            isPossessionFlipped: false,
+          },
         ],
       };
       state().replace(legacy);

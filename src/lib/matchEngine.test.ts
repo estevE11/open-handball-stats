@@ -12,7 +12,6 @@ describe("possession engine", () => {
     "GK_SAVE",
     "SHOT_OUT",
     "SHOT_BLOCKED",
-    "REBOUND_REGAINED",
     "STEAL",
     "TECHNICAL_FAULT",
     "POSSESSION_SWITCH",
@@ -61,13 +60,19 @@ describe("possession engine", () => {
       expect(shot.currentAttackingTeamId).toBe("away");
       expect(regained.currentAttackingTeamId).toBe("home");
       expect(regained.currentPossessionIndex).toBe(3);
+      expect(regained.events[1]).toMatchObject({
+        attackingTeamId: "home",
+        attackingTeamName: "Home",
+        defendingTeamName: "Away",
+        possessionBeforeTeamId: "away",
+      });
       expect(regained.events.map((event) => event.eventType)).toEqual([
         type,
         "REBOUND_REGAINED",
       ]);
       expect(regained.events.map((event) => event.defenseSystem)).toEqual([
         "5:1",
-        "3:2:1",
+        "5:1",
       ]);
       expect(regained.awayTeam.currentDefense).toBe("5:1");
       expect(score(regained, "home")).toBe(0);
