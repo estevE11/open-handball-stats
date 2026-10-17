@@ -111,6 +111,75 @@
   font-weight: 600;
   overflow-wrap: anywhere;
 }
+.score-strip-scroll {
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+.score-strip {
+  display: grid;
+  grid-template-columns: 140px repeat(
+      var(--checkpoint-count),
+      minmax(60px, 1fr)
+    );
+  min-width: calc(140px + var(--checkpoint-count) * 60px);
+  position: relative;
+  margin: 22px 0 10px;
+}
+.score-strip::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  border-top: 1px solid var(--report-line);
+}
+.score-strip-teams,
+.score-checkpoint {
+  display: grid;
+  grid-template-rows: 36px 30px 36px;
+  align-items: center;
+  position: relative;
+}
+.score-strip-teams {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--report-surface);
+  padding-right: 14px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.score-strip-teams > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.score-strip-teams i {
+  width: 9px;
+  height: 9px;
+  border: 1px solid var(--report-line);
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+.score-checkpoint {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.score-checkpoint strong {
+  font-size: 20px;
+  font-weight: 650;
+}
+.score-checkpoint-minute {
+  justify-self: center;
+  background: var(--report-surface);
+  padding: 0 7px;
+  color: var(--report-muted);
+  font-size: 12px;
+}
 .report-two-columns > .report-card {
   margin-bottom: 0;
 }

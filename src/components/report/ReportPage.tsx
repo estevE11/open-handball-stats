@@ -254,28 +254,41 @@ export default function ReportPage({
         <h2>{t("scoreEveryFiveMinutes")}</h2>
         <p className="report-note">{t("scoreCheckpointsHelp")}</p>
         {report.scoreCheckpoints.length ? (
-          <div className="report-table-scroll">
-            <table className="report-table compact">
-              <thead>
-                <tr>
-                  <th>{t("clock")}</th>
-                  {teams.map((team) => (
-                    <th key={team} style={tint(team)}>
-                      {teamOf(match, team).name}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {report.scoreCheckpoints.map((point) => (
-                  <tr key={point.gameTimeSeconds}>
-                    <th scope="row">{formatTime(point.gameTimeSeconds)}</th>
-                    <td>{point.homeScore}</td>
-                    <td>{point.awayScore}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="score-strip-scroll">
+            <div
+              className="score-strip"
+              style={
+                {
+                  "--checkpoint-count": report.scoreCheckpoints.length,
+                } as CSSProperties
+              }
+            >
+              <div className="score-strip-teams" aria-hidden="true">
+                <span>
+                  <i style={{ background: match.homeTeam.color }} />
+                  {match.homeTeam.name}
+                </span>
+                <span />
+                <span>
+                  <i style={{ background: match.awayTeam.color }} />
+                  {match.awayTeam.name}
+                </span>
+              </div>
+              {report.scoreCheckpoints.map((point) => (
+                <div
+                  className="score-checkpoint"
+                  key={point.gameTimeSeconds}
+                  role="group"
+                  aria-label={`${point.gameTimeSeconds / 60}′: ${match.homeTeam.name} ${point.homeScore} – ${match.awayTeam.name} ${point.awayScore}`}
+                >
+                  <strong>{point.homeScore}</strong>
+                  <span className="score-checkpoint-minute">
+                    {point.gameTimeSeconds / 60}′
+                  </span>
+                  <strong>{point.awayScore}</strong>
+                </div>
+              ))}
+            </div>
           </div>
         ) : (
           <p className="report-note">{t("noScoreCheckpoints")}</p>

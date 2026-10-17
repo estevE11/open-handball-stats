@@ -22,7 +22,7 @@ import {
   efficiencyMetrics,
   fraction,
 } from "./reportMetrics";
-import { formatTime, teamOf } from "./matchEngine";
+import { teamOf } from "./matchEngine";
 
 export async function downloadReportPDF(
   match: MatchSession,
@@ -101,11 +101,11 @@ export async function downloadReportPDF(
     text(value, 15, y, 12);
     y += 10;
   }
-  function table(rows: [string, string, string][], firstColumn = t("team")) {
+  function table(rows: [string, string, string][]) {
     const tableHeader = () => {
       pdf.setFillColor("#edf2e8");
       pdf.rect(15, y - 5, 180, 10, "F");
-      text(firstColumn, 18, y + 1, 9);
+      text(t("team"), 18, y + 1, 9);
       text(
         fit(match.homeTeam.name, 43, 9),
         104,
@@ -271,16 +271,41 @@ export async function downloadReportPDF(
     timeline(report.possessions.slice(offset, offset + 60));
   header(t("scoreEveryFiveMinutes"));
   paragraph(t("scoreCheckpointsHelp"), 8);
-  if (report.scoreCheckpoints.length)
-    table(
-      report.scoreCheckpoints.map((point) => [
-        formatTime(point.gameTimeSeconds),
-        String(point.homeScore),
-        String(point.awayScore),
-      ]),
-      t("clock"),
-    );
-  else paragraph(t("noScoreCheckpoints"));
+  if (!report.scoreCheckpoints.length) paragraph(t("noScoreCheckpoints"));
+  for (let offset = 0; offset < report.scoreCheckpoints.length; offset += 12) {
+    room(45);
+    const points = report.scoreCheckpoints.slice(offset, offset + 12);
+    const left = 49,
+      width = 146,
+      lineY = y + 14;
+    pdf.setDrawColor("#c5cebf");
+    pdf.setLineWidth(0.3);
+    pdf.line(15, lineY, 195, lineY);
+    for (const [team, top] of [
+      ["home", lineY - 9],
+      ["away", lineY + 11],
+    ] as const) {
+      pdf.setFillColor(teamOf(match, team).color);
+      pdf.circle(16.5, top - 1, 1.2, "F");
+      text(fit(teamOf(match, team).name, 25, 8), 20, top, 8);
+    }
+    points.forEach((point, index) => {
+      const x = left + ((index + 0.5) * width) / points.length;
+      const centered = (value: string, top: number, size: number) => {
+        pdf.setFontSize(size);
+        text(value, x - pdf.getTextWidth(value) / 2, top, size);
+      };
+      centered(String(point.homeScore), lineY - 9, 10);
+      centered(String(point.awayScore), lineY + 11, 10);
+      const minute = `${point.gameTimeSeconds / 60}'`;
+      pdf.setFontSize(8);
+      const minuteWidth = pdf.getTextWidth(minute) + 3;
+      pdf.setFillColor("#ffffff");
+      pdf.rect(x - minuteWidth / 2, lineY - 3, minuteWidth, 6, "F");
+      centered(minute, lineY + 1, 8);
+    });
+    y += 43;
+  }
   header(t("counterAttacks"));
   table(
     (

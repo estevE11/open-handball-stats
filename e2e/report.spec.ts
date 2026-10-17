@@ -82,11 +82,30 @@ test("report mirrors team metrics, filters periods and inspects defense bands", 
     checkpoints.getByRole("heading", { name: "Score every 5 minutes" }),
   ).toBeVisible();
   await expect(
-    checkpoints.getByRole("row", { name: "05:00 1 0", exact: true }),
+    checkpoints.getByRole("group", {
+      name: "5′: Granollers 1 – Barça 0",
+      exact: true,
+    }),
   ).toBeVisible();
   await expect(
-    checkpoints.getByRole("row", { name: "35:00 2 1", exact: true }),
+    checkpoints.getByRole("group", {
+      name: "35′: Granollers 2 – Barça 1",
+      exact: true,
+    }),
   ).toBeVisible();
+  const positions = await checkpoints
+    .locator(".score-checkpoint")
+    .evaluateAll((points) =>
+      points.map((point) => {
+        const bounds = point.getBoundingClientRect();
+        return { x: bounds.x, y: bounds.y };
+      }),
+    );
+  expect(positions[1].x).toBeGreaterThan(positions[0].x);
+  expect(positions.every((point) => point.y === positions[0].y)).toBe(true);
+  await checkpoints.screenshot({
+    path: testInfo.outputPath("score-strip.png"),
+  });
   expect(
     await checkpoints.evaluate((panel) =>
       panel.previousElementSibling?.textContent?.includes(
@@ -96,7 +115,10 @@ test("report mirrors team metrics, filters periods and inspects defense bands", 
   ).toBe(true);
   await page.getByLabel("Report scope").selectOption("1");
   await expect(
-    checkpoints.getByRole("row", { name: "35:00 2 1", exact: true }),
+    checkpoints.getByRole("group", {
+      name: "35′: Granollers 2 – Barça 1",
+      exact: true,
+    }),
   ).toBeVisible();
   await expect(page.getByTestId("home-attack")).toContainText("33.3%");
   await expect(page.getByTestId("away-defense")).toContainText("66.7%");
@@ -210,6 +232,6 @@ test("empty report has unavailable percentages and no invented possessions", asy
     }),
   ).toBeVisible();
   await expect(
-    page.getByTestId("score-checkpoints").getByRole("table"),
+    page.getByTestId("score-checkpoints").locator(".score-strip"),
   ).toHaveCount(0);
 });
