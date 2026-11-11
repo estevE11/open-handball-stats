@@ -12,6 +12,9 @@ import {
 } from "../lib/browserStorage";
 import {
   gameSeconds,
+  atHalfTime,
+  atPeriodEnd,
+  pauseAtPeriodEnd,
   logEvent,
   newMatch,
   otherTeam,
@@ -44,6 +47,11 @@ interface MatchStore {
   switchPossession: () => void;
   undo: () => void;
   toggleClock: () => void;
+  checkPeriodEnd: () => void;
+  setClockSettings: (
+    halfDurationMinutes: number,
+    automaticPeriodChange: boolean,
+  ) => void;
   nextPeriod: () => void;
   setTime: (seconds: number) => void;
   retry: () => void;
@@ -73,7 +81,7 @@ function change(
   const state = useMatchStore.getState();
   if (!state.ready) return;
   useMatchStore.setState({
-    match,
+    match: pauseAtPeriodEnd(match),
     history: remember
       ? [
           ...state.history.slice(-49),
@@ -81,7 +89,7 @@ function change(
         ]
       : state.history,
   });
-  persist(match);
+  persist(useMatchStore.getState().match);
 }
 let initialization: Promise<void> | undefined;
 export const useMatchStore = create<MatchStore>((set, get) => ({
@@ -93,15 +101,22 @@ export const useMatchStore = create<MatchStore>((set, get) => ({
     (initialization ??= (async () => {
       try {
         const loaded = await loadActiveMatch();
-        const match = loaded ? matchSchema.parse(loaded) : get().match;
+        const match = pauseAtPeriodEnd(
+          loaded ? matchSchema.parse(loaded) : get().match,
+        );
         const history = loaded ? await loadMatchHistory(match) : [];
         set({ match, history, ready: true, saveStatus: "saved" });
-        if (!loaded) persist(match);
+        if (
+          !loaded ||
+          (loaded.clockStartedAt !== null && match.clockStartedAt === null)
+        )
+          persist(match);
       } catch {
         set({ ready: true, saveStatus: "error" });
       }
     })()),
   replace: (match, history = []) => {
+    match = pauseAtPeriodEnd(match);
     set({ match, history });
     persist(match);
   },
@@ -145,11 +160,53 @@ export const useMatchStore = create<MatchStore>((set, get) => ({
   },
   toggleClock: () => {
     const match = get().match;
+    const now = Date.now();
+    if (match.clockStartedAt === null && atPeriodEnd(match, now)) {
+      if (!atHalfTime(match, now) || !match.automaticPeriodChange) return;
+      change(
+        { ...match, period: 2, attackPhase: "STATIC", clockStartedAt: now },
+        true,
+        true,
+      );
+    } else {
+      change(
+        match.clockStartedAt === null
+          ? { ...match, clockStartedAt: now }
+          : stopClock(match, now),
+        false,
+      );
+    }
+  },
+  checkPeriodEnd: () => {
+    const match = get().match;
+    const paused = pauseAtPeriodEnd(match);
+    if (paused !== match) change(paused, false);
+  },
+  setClockSettings: (halfDurationMinutes, automaticPeriodChange) => {
+    if (
+      !Number.isInteger(halfDurationMinutes) ||
+      halfDurationMinutes < 1 ||
+      halfDurationMinutes > 5040 ||
+      typeof automaticPeriodChange !== "boolean"
+    )
+      return;
+    const match = get().match;
+    if (
+      match.halfDurationMinutes === halfDurationMinutes &&
+      match.automaticPeriodChange === automaticPeriodChange
+    )
+      return;
+    const now = Date.now();
     change(
-      match.clockStartedAt === null
-        ? { ...match, clockStartedAt: Date.now() }
-        : stopClock(match),
-      false,
+      {
+        ...match,
+        halfDurationMinutes,
+        automaticPeriodChange,
+        gameTimeSeconds: gameSeconds(match, now),
+        clockStartedAt: match.clockStartedAt === null ? null : now,
+      },
+      true,
+      true,
     );
   },
   nextPeriod: () => {

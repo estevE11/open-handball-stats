@@ -196,5 +196,12 @@
   "unknownOrigin": "Inicio desconocido / sin registrar",
   "scoreEveryFiveMinutes": "Marcador cada 5 minutos",
   "scoreCheckpointsHelp": "Marcador acumulado del partido en cada intervalo completo de cinco minutos, incluidos los goles registrados justo en ese instante. Independiente del filtro de periodo y del zoom.",
-  "noScoreCheckpoints": "Los marcadores aparecen cuando el partido llega a 05:00."
+  "noScoreCheckpoints": "Los marcadores aparecen cuando el partido llega a 05:00.",
+  "halfDuration": "Duración de cada parte (minutos)",
+  "clockSettings": "Ajustes del reloj",
+  "clockSettingsSaved": "Se guarda con este partido. Los nuevos partidos usan partes de 30 minutos y cambio automático activado.",
+  "halfTime": "Descanso",
+  "automaticPeriodChange": "Cambio automático a la segunda parte",
+  "automaticPeriodChangeHelp": "El reloj siempre se pausa al terminar cada parte. Si está activado, pulsar reproducir en el descanso cambia a la segunda parte y reanuda. Si está desactivado, usa Siguiente periodo primero. El tiempo del partido sigue siendo acumulado.",
+  "fullTime": "Final del partido"
 }

@@ -24,12 +24,19 @@ import {
   Play,
   Plus,
   ShieldCheck,
+  Settings2,
   Upload,
   WifiOff,
 } from "lucide-react";
 import { useTranslation, type TranslationKey } from "./hooks/useTranslation";
 import { useMatchStore, flushSaves } from "./store/matchStore";
-import { formatTime, gameSeconds, score, teamOf } from "./lib/matchEngine";
+import {
+  atPeriodEnd,
+  formatTime,
+  gameSeconds,
+  score,
+  teamOf,
+} from "./lib/matchEngine";
 import { importJSON } from "./lib/exportService";
 import { TaggingPanel } from "./components/app/TaggingPanel";
 import { EventStream } from "./components/app/EventStream";
@@ -80,7 +87,12 @@ export default function App() {
     document.documentElement.lang = language;
   }, [language]);
   useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 250);
+    const tick = () => {
+      useMatchStore.getState().checkPeriodEnd();
+      setNow(Date.now());
+    };
+    const id = setInterval(tick, 250);
+    document.addEventListener("visibilitychange", tick);
     const update = () => setOffline(!navigator.onLine);
     window.addEventListener("online", update);
     window.addEventListener("offline", update);
@@ -93,6 +105,7 @@ export default function App() {
     window.addEventListener("beforeunload", protect);
     return () => {
       clearInterval(id);
+      document.removeEventListener("visibilitychange", tick);
       window.removeEventListener("online", update);
       window.removeEventListener("offline", update);
       window.removeEventListener("beforeunload", protect);
@@ -452,18 +465,48 @@ export default function App() {
                   <span className={running ? "live-dot" : "paused-dot"} />
                   {t("period")} {match.period}
                   <span>·</span>
-                  {t(running ? "running" : "paused")}
+                  {t(
+                    running
+                      ? "running"
+                      : atPeriodEnd(match, now)
+                        ? match.period === 1
+                          ? "halfTime"
+                          : "fullTime"
+                        : "paused",
+                  )}
                 </div>
-                <button
-                  className="clock"
-                  onClick={() => setDialog("clock")}
-                  aria-label={t("editClock")}
-                >
-                  {formatTime(gameSeconds(match, now))}
-                </button>
+                <div className="clock-display">
+                  <button
+                    className="clock"
+                    onClick={() => setDialog("clock")}
+                    aria-label={t("editClock")}
+                  >
+                    {formatTime(gameSeconds(match, now))}
+                  </button>
+                  <button
+                    className="icon-button clock-settings-trigger"
+                    onClick={() => setDialog("clockSettings")}
+                    aria-label={t("clockSettings")}
+                    title={t("clockSettings")}
+                  >
+                    <Settings2 size={17} />
+                  </button>
+                </div>
                 <div className="clock-controls">
                   <button
                     className="button clock-toggle"
+                    disabled={
+                      !running &&
+                      atPeriodEnd(match, now) &&
+                      (match.period !== 1 || !match.automaticPeriodChange)
+                    }
+                    title={
+                      !running &&
+                      atPeriodEnd(match, now) &&
+                      !match.automaticPeriodChange
+                        ? t("nextPeriodHelp")
+                        : undefined
+                    }
                     onClick={store.toggleClock}
                   >
                     {running ? <Pause size={13} /> : <Play size={13} />}{" "}

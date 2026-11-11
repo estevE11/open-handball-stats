@@ -196,5 +196,12 @@
   "unknownOrigin": "Unknown / unrecorded start",
   "scoreEveryFiveMinutes": "Score every 5 minutes",
   "scoreCheckpointsHelp": "Cumulative whole-match scores at each completed five-minute mark, including goals recorded exactly at that time. Independent of the period filter and chart zoom.",
-  "noScoreCheckpoints": "Five-minute scores appear once the match reaches 05:00."
+  "noScoreCheckpoints": "Five-minute scores appear once the match reaches 05:00.",
+  "halfDuration": "Half length (minutes)",
+  "clockSettings": "Clock settings",
+  "clockSettingsSaved": "Saved with this match. New matches use 30-minute halves with automatic switching enabled.",
+  "halfTime": "Halftime",
+  "automaticPeriodChange": "Automatic switch to second half",
+  "automaticPeriodChangeHelp": "The clock always pauses at the end of each half. When enabled, pressing Play at halftime switches to the second half and resumes. When disabled, use Next period first. Match time stays cumulative.",
+  "fullTime": "Full time"
 }

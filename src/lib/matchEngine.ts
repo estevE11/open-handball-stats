@@ -25,18 +25,47 @@ export function newMatch(
     currentPossessionIndex: 1,
     attackPhase: "STATIC",
     period: 1,
+    halfDurationMinutes: 30,
+    automaticPeriodChange: true,
     gameTimeSeconds: 0,
     clockStartedAt: null,
     events: [],
   };
 }
 export function gameSeconds(match: MatchSession, now = Date.now()) {
-  return (
+  const elapsed =
     match.gameTimeSeconds +
     (match.clockStartedAt === null
       ? 0
-      : Math.max(0, now - match.clockStartedAt) / 1000)
+      : Math.max(0, now - match.clockStartedAt) / 1000);
+  if (match.period <= 2) {
+    // Do not rewind manually adjusted time or already recorded matches.
+    return Math.min(
+      elapsed,
+      Math.max(
+        match.halfDurationMinutes * 60 * match.period,
+        match.gameTimeSeconds,
+      ),
+    );
+  }
+  return elapsed;
+}
+export function atPeriodEnd(match: MatchSession, now = Date.now()) {
+  return (
+    match.period <= 2 &&
+    gameSeconds(match, now) >= match.halfDurationMinutes * 60 * match.period
   );
+}
+export function atHalfTime(match: MatchSession, now = Date.now()) {
+  return match.period === 1 && atPeriodEnd(match, now);
+}
+export function pauseAtPeriodEnd(
+  match: MatchSession,
+  now = Date.now(),
+): MatchSession {
+  return match.clockStartedAt !== null && atPeriodEnd(match, now)
+    ? stopClock(match, now)
+    : match;
 }
 export function stopClock(match: MatchSession, now = Date.now()): MatchSession {
   return {

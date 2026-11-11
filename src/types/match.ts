@@ -81,6 +81,9 @@ export const matchSchema = z
     currentPossessionIndex: z.number().int().positive(),
     attackPhase: z.enum(attackPhases).default("STATIC"),
     period: z.number().int().min(1).max(20).default(1),
+    halfDurationMinutes: z.number().int().min(1).max(5040).default(30),
+    // Existing matches retain manual period changes until explicitly enabled.
+    automaticPeriodChange: z.boolean().default(false),
     gameTimeSeconds: seconds.default(0),
     clockStartedAt: z
       .number()

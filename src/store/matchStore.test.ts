@@ -7,7 +7,7 @@ import {
   saveMatch,
 } from "../lib/browserStorage";
 import { newMatch, score, logEvent } from "../lib/matchEngine";
-import { flushSaves, useMatchStore } from "./matchStore";
+import { currentSeconds, flushSaves, useMatchStore } from "./matchStore";
 const state = () => useMatchStore.getState();
 beforeEach(async () => {
   await flushSaves();
@@ -215,5 +215,164 @@ describe("persistent undo", () => {
     await flushSaves();
     expect(await loadMatchHistory(state().match)).toHaveLength(1);
     expect(await loadMatchHistory(first)).toHaveLength(50);
+  });
+});
+
+describe("automatic halftime", () => {
+  it.each([25, 30])(
+    "stops exactly at %i minutes after a delayed tick, saves once, then resumes in period 2",
+    async (minutes) => {
+      const now = vi.spyOn(Date, "now").mockReturnValue(1000);
+      try {
+        state().setClockSettings(minutes, true);
+        state().setTime(minutes * 60 - 1);
+        state().setPhase("COUNTERATTACK");
+        state().toggleClock();
+        now.mockReturnValue(121000);
+        expect(currentSeconds()).toBe(minutes * 60);
+        state().checkPeriodEnd();
+        expect(state().match).toMatchObject({
+          period: 1,
+          gameTimeSeconds: minutes * 60,
+          clockStartedAt: null,
+        });
+        await flushSaves();
+        expect(await loadActiveMatch()).toEqual(state().match);
+        const put = vi.spyOn(db.matches, "put");
+        state().checkPeriodEnd();
+        state().checkPeriodEnd();
+        await flushSaves();
+        expect(put).not.toHaveBeenCalled();
+        put.mockRestore();
+        state().toggleClock();
+        expect(state().match).toMatchObject({
+          period: 2,
+          gameTimeSeconds: minutes * 60,
+          attackPhase: "STATIC",
+          clockStartedAt: 121000,
+        });
+        now.mockReturnValue(126000);
+        state().log("GOAL");
+        expect(state().match.events[0]).toMatchObject({
+          period: 2,
+          gameTimeSeconds: minutes * 60 + 5,
+        });
+        state().undo();
+        expect(state().match.period).toBe(2);
+        state().undo();
+        expect(state().match).toMatchObject({
+          period: 1,
+          gameTimeSeconds: minutes * 60,
+          clockStartedAt: null,
+          attackPhase: "COUNTERATTACK",
+        });
+      } finally {
+        now.mockRestore();
+      }
+    },
+  );
+
+  it("always pauses at halftime with automatic switching off, and requires manual period change", () => {
+    const now = vi.spyOn(Date, "now").mockReturnValue(1000);
+    try {
+      state().toggleClock();
+      now.mockReturnValue(11000);
+      state().toggleClock();
+      state().toggleClock();
+      expect(state().match.period).toBe(1);
+      state().setClockSettings(25, false);
+      now.mockReturnValue(2000000);
+      state().checkPeriodEnd();
+      expect(state().match.clockStartedAt).toBeNull();
+      expect(currentSeconds()).toBe(1500);
+      state().toggleClock();
+      expect(state().match).toMatchObject({ period: 1, clockStartedAt: null });
+      state().nextPeriod();
+      state().toggleClock();
+      expect(state().match.period).toBe(2);
+      expect(state().match.clockStartedAt).not.toBeNull();
+    } finally {
+      now.mockRestore();
+    }
+  });
+
+  it.each([true, false])(
+    "stops at full time without advancing to period 3 (automatic switching: %s)",
+    (automatic) => {
+      const now = vi.spyOn(Date, "now").mockReturnValue(1000);
+      try {
+        state().setClockSettings(25, automatic);
+        state().setTime(2999);
+        state().nextPeriod();
+        state().toggleClock();
+        now.mockReturnValue(11000);
+        state().checkPeriodEnd();
+        expect(state().match).toMatchObject({
+          period: 2,
+          gameTimeSeconds: 3000,
+          clockStartedAt: null,
+        });
+        state().toggleClock();
+        expect(state().match).toMatchObject({
+          period: 2,
+          clockStartedAt: null,
+        });
+      } finally {
+        now.mockRestore();
+      }
+    },
+  );
+
+  it("clamps events at halftime before the UI tick and restores a late saved running clock as paused", () => {
+    const now = vi.spyOn(Date, "now").mockReturnValue(1000);
+    try {
+      state().setTime(1799);
+      state().toggleClock();
+      now.mockReturnValue(10000);
+      state().log("GOAL");
+      expect(state().match.events[0]).toMatchObject({
+        period: 1,
+        gameTimeSeconds: 1800,
+      });
+      expect(state().match.clockStartedAt).toBeNull();
+      state().replace({
+        ...newMatch(),
+        gameTimeSeconds: 1799,
+        clockStartedAt: 1000,
+      });
+      expect(state().match).toMatchObject({
+        period: 1,
+        gameTimeSeconds: 1800,
+        clockStartedAt: null,
+      });
+    } finally {
+      now.mockRestore();
+    }
+  });
+
+  it("does not rewind time when enabling automation after the configured limit", async () => {
+    state().setClockSettings(30, false);
+    state().setTime(3300);
+    state().log("GOAL");
+    state().setClockSettings(25, true);
+    expect(currentSeconds()).toBe(3300);
+    expect(state().match.events[0].gameTimeSeconds).toBe(3300);
+    state().toggleClock();
+    expect(state().match.period).toBe(2);
+    await flushSaves();
+    expect((await loadActiveMatch())?.halfDurationMinutes).toBe(25);
+    expect((await loadActiveMatch())?.automaticPeriodChange).toBe(true);
+  });
+
+  it("resumes the first half when its length is increased, and rejects invalid lengths", () => {
+    state().setClockSettings(25, true);
+    state().setTime(1500);
+    state().setClockSettings(30, true);
+    state().toggleClock();
+    expect(state().match.period).toBe(1);
+    const match = state().match;
+    for (const minutes of [0, -1, 25.5, NaN, Infinity, 10081])
+      state().setClockSettings(minutes, true);
+    expect(state().match).toBe(match);
   });
 });

@@ -177,3 +177,27 @@ describe("portable exports", () => {
     expect(match.clockStartedAt).not.toBeNull();
   });
 });
+
+describe("clock settings compatibility", () => {
+  it("imports old matches with manual halftime and preserves their timestamps", () => {
+    const legacy = JSON.parse(
+      JSON.stringify({ ...newMatch(), gameTimeSeconds: 3600 }),
+    );
+    delete legacy.halfDurationMinutes;
+    delete legacy.automaticPeriodChange;
+    const restored = importJSON(JSON.stringify(legacy));
+    expect(restored.halfDurationMinutes).toBe(30);
+    expect(restored.automaticPeriodChange).toBe(false);
+    expect(restored.gameTimeSeconds).toBe(3600);
+  });
+  it("round-trips a match's configured halftime behavior", () => {
+    const match = {
+      ...newMatch(),
+      halfDurationMinutes: 25,
+      automaticPeriodChange: true,
+    };
+    const restored = importJSON(exportJSON(match));
+    expect(restored.halfDurationMinutes).toBe(25);
+    expect(restored.automaticPeriodChange).toBe(true);
+  });
+});

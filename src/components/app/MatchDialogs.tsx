@@ -1,4 +1,5 @@
 import { SegmentedControl } from "../ui/SegmentedControl";
+import { ClockSettings } from "./ClockSettings";
 import { ClockEditor } from "./ClockEditor";
 import { useEffect, useState, type FormEvent } from "react";
 import {
@@ -30,6 +31,7 @@ export type DialogKind =
   | "fault"
   | "sanction"
   | "clock"
+  | "clockSettings"
   | "period"
   | { event: MatchEvent };
 export function MatchDialogs({
@@ -112,6 +114,7 @@ export function MatchDialogs({
           fault: t("TECHNICAL_FAULT"),
           sanction: t("SANCTION"),
           clock: t("editClock"),
+          clockSettings: t("clockSettings"),
           period: t("nextPeriod"),
         }[kind];
   return (
@@ -330,6 +333,17 @@ export function MatchDialogs({
             ))}
           </div>
         </>
+      )}
+      {kind === "clockSettings" && (
+        <ClockSettings
+          halfDurationMinutes={match.halfDurationMinutes}
+          automaticPeriodChange={match.automaticPeriodChange}
+          onApply={(minutes, automatic) => {
+            store.setClockSettings(minutes, automatic);
+            onClose();
+          }}
+          onCancel={onClose}
+        />
       )}
       {kind === "clock" && (
         <ClockEditor
