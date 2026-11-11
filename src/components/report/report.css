@@ -183,6 +183,58 @@
 .report-two-columns > .report-card {
   margin-bottom: 0;
 }
+.report-page .interval-team-toggle {
+  margin: 0;
+  max-width: 100%;
+  flex: 0 1 auto;
+}
+.report-page .interval-team-toggle button {
+  padding: 0 14px;
+  min-width: 64px;
+  overflow-wrap: anywhere;
+}
+.five-minute-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  margin-top: 16px;
+}
+.five-minute-table th,
+.five-minute-table td {
+  padding: 13px 8px;
+  border: 1px solid var(--report-line);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.five-minute-table thead th {
+  background: #eef4fc;
+  color: #45618a;
+  font-size: 11px;
+  font-weight: 650;
+}
+.five-minute-table th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  text-align: left;
+}
+.five-minute-table tbody th {
+  background: var(--report-surface);
+  font-weight: 550;
+}
+.five-minute-table td {
+  color: #25392f;
+  font-weight: 600;
+}
+.five-minute-table tbody tr:nth-child(2) > * {
+  border-top-width: 6px;
+}
+[data-theme="dark"] .five-minute-table thead th {
+  background: #253448;
+  color: #bfd2ef;
+}
 .report-section-heading {
   display: flex;
   justify-content: space-between;

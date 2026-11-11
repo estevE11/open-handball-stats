@@ -23,6 +23,7 @@ import {
 } from "../../types/match";
 import { formatTime, teamOf } from "../../lib/matchEngine";
 import { GoalDifferenceChart } from "./GoalDifferenceChart";
+import { FiveMinuteTable } from "./FiveMinuteTable";
 import "./report.css";
 const teams = ["home", "away"] as const;
 export default function ReportPage({
@@ -35,6 +36,8 @@ export default function ReportPage({
   const { t, language } = useTranslation();
   const [period, setPeriod] = useState<number | undefined>();
   const [perspective, setPerspective] = useState<TeamId>("home");
+  const [intervalPerspective, setIntervalPerspective] =
+    useState<TeamId>("home");
   const [selected, setSelected] = useState(0);
   const [zoom, setZoom] = useState<[number, number] | null>(null);
   const [metric, setMetric] = useState<EfficiencyMetric>("attack");
@@ -58,7 +61,14 @@ export default function ReportPage({
     setPdfError(false);
     try {
       const { downloadReportPDF } = await import("../../lib/reportPdf");
-      await downloadReportPDF(match, report, language, period, perspective);
+      await downloadReportPDF(
+        match,
+        report,
+        language,
+        period,
+        perspective,
+        intervalPerspective,
+      );
     } catch {
       setPdfError(true);
     } finally {
@@ -294,6 +304,12 @@ export default function ReportPage({
           <p className="report-note">{t("noScoreCheckpoints")}</p>
         )}
       </section>
+      <FiveMinuteTable
+        match={match}
+        intervals={report.fiveMinuteIntervals}
+        team={intervalPerspective}
+        onTeamChange={setIntervalPerspective}
+      />
       <div className="report-two-columns">
         <section className="report-card">
           <h2>{t("efficiency")}</h2>

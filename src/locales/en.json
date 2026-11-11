@@ -203,5 +203,13 @@
   "halfTime": "Halftime",
   "automaticPeriodChange": "Automatic switch to second half",
   "automaticPeriodChangeHelp": "The clock always pauses at the end of each half. When enabled, pressing Play at halftime switches to the second half and resumes. When disabled, use Next period first. Match time stays cumulative.",
-  "fullTime": "Full time"
+  "fullTime": "Full time",
+  "fiveMinuteAnalysis": "Five-minute analysis",
+  "fiveMinutePerspective": "Five-minute analysis perspective",
+  "scorePlusMinus": "Score +/-",
+  "fiveMinuteHelp": "Only actions in each five-minute span. Possessions count where they finish; — means no completed possessions.",
+  "noIntervalData": "Record an attack to see the five-minute breakdown.",
+  "intervalInProgress": "In progress",
+  "intervalMinute": "Minutes",
+  "offensiveEfficiency": "Offensive efficiency"
 }

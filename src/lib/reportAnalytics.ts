@@ -51,6 +51,19 @@ export interface Ratio {
   denominator: number;
   value: number | null;
 }
+export interface IntervalTeamStats {
+  goals: number;
+  possessions: number;
+  difference: number;
+  attack: Ratio;
+  defense: Ratio;
+}
+export interface FiveMinuteInterval {
+  startSeconds: number;
+  endSeconds: number;
+  partial: boolean;
+  teams: Record<TeamId, IntervalTeamStats>;
+}
 export const ratio = (numerator: number, denominator: number): Ratio => ({
   numerator,
   denominator,
@@ -286,11 +299,13 @@ function teamStats(possessions: Possession[], team: TeamId): TeamStats {
     counterAttack: counters.efficiency,
   };
 }
-function scoreCheckpoints(match: MatchSession) {
-  const elapsed = match.events.reduce(
+function reportElapsed(match: MatchSession) {
+  return match.events.reduce(
     (latest, event) => Math.max(latest, event.gameTimeSeconds),
     gameSeconds(match),
   );
+}
+function scoreCheckpoints(match: MatchSession, elapsed: number) {
   const goals = match.events
     .filter((event) => event.eventType === "GOAL")
     .sort((a, b) => a.gameTimeSeconds - b.gameTimeSeconds);
@@ -318,14 +333,86 @@ function scoreCheckpoints(match: MatchSession) {
   }
   return checkpoints;
 }
+function fiveMinuteIntervals(
+  match: MatchSession,
+  possessions: Possession[],
+  elapsed: number,
+  period?: number,
+): FiveMinuteInterval[] {
+  const events = match.events.filter(
+    (event) => period === undefined || event.period === period,
+  );
+  if (period !== undefined && !events.length) return [];
+  const bucket = (time: number) => Math.max(0, Math.ceil(time / 300) - 1);
+  const start =
+    period === undefined
+      ? 0
+      : events.reduce(
+          (min, event) => Math.min(min, event.gameTimeSeconds),
+          Infinity,
+        );
+  const end =
+    period === undefined || period === match.period
+      ? elapsed
+      : events.reduce((max, event) => Math.max(max, event.gameTimeSeconds), 0);
+  if (!end && !events.length) return [];
+  const emptyTeam = (): IntervalTeamStats => ({
+    goals: 0,
+    possessions: 0,
+    difference: 0,
+    attack: ratio(0, 0),
+    defense: ratio(0, 0),
+  });
+  const first = bucket(start);
+  const intervals = Array.from(
+    { length: bucket(end) - first + 1 },
+    (_, index): FiveMinuteInterval => ({
+      startSeconds: (first + index) * 300,
+      endSeconds: (first + index + 1) * 300,
+      partial: (first + index + 1) * 300 > elapsed,
+      teams: { home: emptyTeam(), away: emptyTeam() },
+    }),
+  );
+  for (const possession of possessions) {
+    for (const event of possession.events) {
+      if (event.eventType !== "GOAL") continue;
+      const interval = intervals[bucket(event.gameTimeSeconds) - first];
+      if (interval) interval.teams[possession.team].goals++;
+    }
+    // A recovered rebound extends the possession. Only its final action assigns
+    // the completed possession to an interval, even if earlier shots precede it.
+    if (possession.completed) {
+      const interval =
+        intervals[bucket(possession.events.at(-1)!.gameTimeSeconds) - first];
+      if (interval) interval.teams[possession.team].possessions++;
+    }
+  }
+  for (const interval of intervals) {
+    for (const team of ["home", "away"] as const) {
+      const own = interval.teams[team],
+        rival = interval.teams[otherTeam(team)];
+      own.difference = own.goals - rival.goals;
+      own.attack = ratio(own.goals, own.possessions);
+      own.defense = ratio(rival.possessions - rival.goals, rival.possessions);
+    }
+  }
+  return intervals;
+}
 export function buildReport(match: MatchSession, period?: number) {
   const all = reconstructPossessions(match);
   const possessions = all.filter(
     (p) => period === undefined || p.period === period,
   );
+  const elapsed = reportElapsed(match);
   return {
     possessions,
-    scoreCheckpoints: scoreCheckpoints(match),
+    scoreCheckpoints: scoreCheckpoints(match, elapsed),
+    fiveMinuteIntervals: fiveMinuteIntervals(
+      match,
+      possessions,
+      elapsed,
+      period,
+    ),
     teams: {
       home: teamStats(possessions, "home"),
       away: teamStats(possessions, "away"),

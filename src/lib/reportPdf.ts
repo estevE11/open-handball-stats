@@ -21,6 +21,9 @@ import {
   counterattackSources,
   efficiencyMetrics,
   fraction,
+  formatDifference,
+  intervalCellColor,
+  intervalMetrics,
 } from "./reportMetrics";
 import { teamOf } from "./matchEngine";
 
@@ -30,6 +33,7 @@ export async function downloadReportPDF(
   language: Language,
   period?: number,
   perspective: TeamId = "home",
+  intervalPerspective: TeamId = perspective,
 ) {
   const t = (key: keyof typeof en) => (language === "es" ? es : en)[key];
   const response = await fetch("/fonts/NotoSans-Regular.ttf");
@@ -306,6 +310,65 @@ export async function downloadReportPDF(
     });
     y += 43;
   }
+  header(t("fiveMinuteAnalysis"));
+  paragraph(`${t("perspective")}: ${teamOf(match, intervalPerspective).name}`);
+  paragraph(t("fiveMinuteHelp"), 8);
+  const differenceScale = Math.max(
+    1,
+    ...report.fiveMinuteIntervals.map((interval) =>
+      Math.abs(interval.teams[intervalPerspective].difference),
+    ),
+  );
+  if (!report.fiveMinuteIntervals.length) paragraph(t("noIntervalData"));
+  for (
+    let offset = 0;
+    offset < report.fiveMinuteIntervals.length;
+    offset += 12
+  ) {
+    room(58);
+    const intervals = report.fiveMinuteIntervals.slice(offset, offset + 12);
+    const labelWidth = 43,
+      cellWidth = 137 / intervals.length;
+    const centered = (value: string, x: number, top: number, size = 7) => {
+      pdf.setFontSize(size);
+      text(value, x - pdf.getTextWidth(value) / 2, top, size);
+    };
+    pdf.setFillColor("#eef4fc");
+    pdf.rect(15, y - 5, 180, 10, "F");
+    text(t("intervalMinute"), 18, y + 1, 8);
+    intervals.forEach((interval, index) =>
+      centered(
+        `${interval.endSeconds / 60}'${interval.partial ? "*" : ""}`,
+        15 + labelWidth + (index + 0.5) * cellWidth,
+        y + 1,
+      ),
+    );
+    y += 10;
+    for (const [label, key] of intervalMetrics) {
+      if (key === "attack") y += 3;
+      text(fit(t(label), labelWidth - 4, 8), 18, y + 2, 8);
+      intervals.forEach((interval, index) => {
+        const data = interval.teams[intervalPerspective][key];
+        const value = typeof data === "number" ? data : data.value;
+        const x = 15 + labelWidth + index * cellWidth;
+        pdf.setFillColor(
+          key === "difference"
+            ? intervalCellColor(value, 0, differenceScale)
+            : intervalCellColor(value),
+        );
+        pdf.rect(x, y - 5, cellWidth, 10, "F");
+        centered(
+          typeof data === "number" ? formatDifference(data) : formatRatio(data),
+          x + cellWidth / 2,
+          y + 2,
+        );
+      });
+      y += 10;
+    }
+    y += 10;
+  }
+  if (report.fiveMinuteIntervals.some((interval) => interval.partial))
+    paragraph(`* ${t("intervalInProgress")}`, 8);
   header(t("counterAttacks"));
   table(
     (

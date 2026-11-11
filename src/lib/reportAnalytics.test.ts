@@ -45,6 +45,111 @@ describe("match analysis", () => {
       { gameTimeSeconds: 600, homeScore: 1, awayScore: 1 },
     ]);
   });
+  it("calculates interval-only scores and possession efficiencies without carrying previous goals forward", () => {
+    let match = logEvent({ ...newMatch(), gameTimeSeconds: 300 }, "GOAL");
+    match = logEvent({ ...match, gameTimeSeconds: 301 }, "GOAL");
+    match = logEvent({ ...match, gameTimeSeconds: 430 }, "TECHNICAL_FAULT", {
+      subType: "BAD_PASS",
+    });
+    match = logEvent({ ...match, gameTimeSeconds: 600 }, "GK_SAVE");
+    match.gameTimeSeconds = 900;
+    const intervals = buildReport(match).fiveMinuteIntervals;
+    expect(intervals).toHaveLength(3);
+    expect(intervals[0]).toMatchObject({
+      startSeconds: 0,
+      endSeconds: 300,
+      partial: false,
+      teams: {
+        home: {
+          goals: 1,
+          possessions: 1,
+          difference: 1,
+          attack: { value: 100 },
+          defense: { value: null },
+        },
+        away: {
+          goals: 0,
+          possessions: 0,
+          difference: -1,
+          attack: { value: null },
+          defense: { value: 0 },
+        },
+      },
+    });
+    expect(intervals[1].teams.home).toMatchObject({
+      goals: 0,
+      possessions: 1,
+      difference: -1,
+      attack: { value: 0 },
+      defense: { value: 50 },
+    });
+    expect(intervals[1].teams.away).toMatchObject({
+      goals: 1,
+      possessions: 2,
+      difference: 1,
+      attack: { value: 50 },
+      defense: { value: 100 },
+    });
+    expect(intervals[2].teams.home).toMatchObject({
+      goals: 0,
+      possessions: 0,
+      difference: 0,
+      attack: { value: null },
+      defense: { value: null },
+    });
+    for (const interval of intervals) {
+      expect(
+        interval.teams.home.difference + interval.teams.away.difference,
+      ).toBe(0);
+      for (const [own, rival] of [
+        ["home", "away"],
+        ["away", "home"],
+      ] as const) {
+        if (interval.teams[own].attack.value !== null)
+          expect(interval.teams[rival].defense.value).toBeCloseTo(
+            100 - interval.teams[own].attack.value!,
+          );
+        else expect(interval.teams[rival].defense.value).toBeNull();
+      }
+    }
+  });
+  it("assigns a cross-boundary rebound possession to its finishing action without counting the penalty or rebound twice", () => {
+    let match = logEvent({ ...newMatch(), gameTimeSeconds: 299 }, "SHOT_OUT");
+    match = logEvent({ ...match, gameTimeSeconds: 300 }, "REBOUND_REGAINED");
+    match = logEvent(match, "PENALTY_7M");
+    expect(
+      buildReport(match).fiveMinuteIntervals[0].teams.home.possessions,
+    ).toBe(0);
+    match = logEvent({ ...match, gameTimeSeconds: 301 }, "GOAL");
+    const intervals = buildReport(match).fiveMinuteIntervals;
+    expect(intervals[0].teams.home).toMatchObject({
+      goals: 0,
+      possessions: 0,
+      attack: { value: null },
+    });
+    expect(intervals[1]).toMatchObject({
+      partial: true,
+      teams: { home: { goals: 1, possessions: 1, attack: { value: 100 } } },
+    });
+  });
+  it("honors the selected period and shows the current partial interval without inventing future columns", () => {
+    expect(buildReport(newMatch()).fiveMinuteIntervals).toEqual([]);
+    let match = logEvent({ ...newMatch(), gameTimeSeconds: 100 }, "GOAL");
+    expect(buildReport(match).fiveMinuteIntervals).toHaveLength(1);
+    expect(buildReport(match).fiveMinuteIntervals[0].partial).toBe(true);
+    match = logEvent({ ...match, period: 2, gameTimeSeconds: 1850 }, "GOAL");
+    match.gameTimeSeconds = 2100;
+    const report = buildReport(match, 2);
+    expect(report.fiveMinuteIntervals).toHaveLength(1);
+    expect(report.fiveMinuteIntervals[0]).toMatchObject({
+      startSeconds: 1800,
+      endSeconds: 2100,
+      teams: {
+        home: { goals: 0, possessions: 0, difference: -1 },
+        away: { goals: 1, possessions: 1, difference: 1 },
+      },
+    });
+  });
   it("counts mirrored shooting, defense, keeper and turnover metrics", () => {
     let match = newMatch();
     for (const type of [

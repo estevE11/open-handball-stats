@@ -203,5 +203,13 @@
   "halfTime": "Descanso",
   "automaticPeriodChange": "Cambio automático a la segunda parte",
   "automaticPeriodChangeHelp": "El reloj siempre se pausa al terminar cada parte. Si está activado, pulsar reproducir en el descanso cambia a la segunda parte y reanuda. Si está desactivado, usa Siguiente periodo primero. El tiempo del partido sigue siendo acumulado.",
-  "fullTime": "Final del partido"
+  "fullTime": "Final del partido",
+  "fiveMinuteAnalysis": "Análisis cada cinco minutos",
+  "fiveMinutePerspective": "Perspectiva del análisis cada cinco minutos",
+  "scorePlusMinus": "Goles +/-",
+  "fiveMinuteHelp": "Solo acciones de cada intervalo de cinco minutos. Las posesiones cuentan donde finalizan; — indica que no hay posesiones finalizadas.",
+  "noIntervalData": "Registra un ataque para ver el desglose cada cinco minutos.",
+  "intervalInProgress": "En curso",
+  "intervalMinute": "Minutos",
+  "offensiveEfficiency": "Eficacia ofensiva"
 }

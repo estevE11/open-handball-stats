@@ -160,6 +160,58 @@ test("report mirrors team metrics, filters periods and inspects defense bands", 
   await expect(page.getByTestId("home-attack")).toContainText("—");
 });
 
+test("five-minute analysis uses interval-only figures and mirrors the selected team", async ({
+  page,
+}, testInfo) => {
+  await loadFixture(page);
+  const panel = page.getByTestId("five-minute-analysis");
+  const toggle = panel.getByRole("group", {
+    name: "Five-minute analysis perspective",
+    exact: true,
+  });
+  await expect(toggle).toHaveClass(/language-toggle/);
+  await expect(
+    toggle.getByRole("button", { name: "Granollers", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(panel.locator("tbody tr")).toHaveCount(3);
+  await expect(
+    panel.getByTestId("interval-difference").locator("td"),
+  ).toHaveText(["+1", "0", "0", "0", "0", "+1", "-1"]);
+  await expect(
+    panel.getByTestId("interval-attack").locator("td").first(),
+  ).toHaveText("100.0%");
+  await expect(
+    panel.getByTestId("interval-defense").locator("td").first(),
+  ).toHaveText("100.0%");
+  await toggle.getByRole("button", { name: "Barça", exact: true }).click();
+  await expect(
+    toggle.getByRole("button", { name: "Barça", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(
+    panel.getByTestId("interval-difference").locator("td"),
+  ).toHaveText(["-1", "0", "0", "0", "0", "-1", "+1"]);
+  await expect(
+    panel.getByTestId("interval-attack").locator("td").first(),
+  ).toHaveText("0.0%");
+  await expect(
+    panel.getByTestId("interval-defense").locator("td").first(),
+  ).toHaveText("0.0%");
+  await expect(
+    page.getByRole("combobox", { name: "Perspective", exact: true }),
+  ).toHaveValue("home");
+  await panel.screenshot({
+    path: testInfo.outputPath("five-minute-analysis.png"),
+  });
+  await page.getByLabel("Report scope").selectOption("1");
+  await expect(
+    panel.getByTestId("interval-difference").locator("td"),
+  ).toHaveText(["-1", "0", "0"]);
+  await page.getByLabel("Report scope").selectOption("2");
+  await expect(
+    panel.getByTestId("interval-difference").locator("td"),
+  ).toHaveText(["-1", "+1"]);
+});
+
 test("report exports complete EN/ES PDFs offline and works on mobile", async ({
   page,
   context,
@@ -170,6 +222,10 @@ test("report exports complete EN/ES PDFs offline and works on mobile", async ({
   });
   await page.reload();
   await page.waitForFunction(() => !!navigator.serviceWorker.controller);
+  await page
+    .getByTestId("five-minute-analysis")
+    .getByRole("button", { name: "Barça", exact: true })
+    .click();
   await page.getByRole("button", { name: "ES", exact: true }).click();
   await context.setOffline(true);
   const download = page.waitForEvent("download");
@@ -191,6 +247,9 @@ test("report exports complete EN/ES PDFs offline and works on mobile", async ({
   await expect(
     page.getByRole("button", { name: "Download PDF" }),
   ).toBeVisible();
+  await page
+    .getByTestId("five-minute-analysis")
+    .screenshot({ path: testInfo.outputPath("five-minute-mobile.png") });
   await page.screenshot({
     path: testInfo.outputPath("report-mobile.png"),
     fullPage: true,
